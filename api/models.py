@@ -1,10 +1,19 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 
+class Profile(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255)
+    goodle_id = models.CharField(max_length=100)
+
+    def __str__(self):
+        return str(self.name)
+
 class Chart(models.Model):
     name = models.CharField(max_length=100)
     chart_type = models.CharField(max_length=100)
     series_type = models.CharField(max_length=100)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -14,6 +23,7 @@ class DataSource(models.Model):
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -24,6 +34,7 @@ class DataSet(models.Model):
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     y_axis_id = models.CharField(max_length=100)
     data = JSONField()
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -33,3 +44,4 @@ class Operation(models.Model):
     dataset = models.ForeignKey(DataSet, on_delete=models.CASCADE)
     root_function = models.CharField(max_length=100)
     ast = JSONField()
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)

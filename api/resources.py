@@ -1,7 +1,8 @@
-from tastypie.resources import ModelResource
+from tastypie.resources import ModelResource, Resource
 from tastypie.authorization import Authorization
 from tastypie import fields
-from .models import Chart, DataSource, DataSet
+from django.conf.urls import url
+from .models import Chart, DataSource, DataSet, Operation, Profile
 
 class ChartResource(ModelResource):
     class Meta:
@@ -23,3 +24,11 @@ class DataSetResource(ModelResource):
         queryset = DataSet.objects.all()
         resource_name = 'dataset'
         authorization = Authorization()
+
+class OperationResource(ModelResource):
+    dataset = fields.ForeignKey(DataSetResource, 'dataset')
+    class Meta:
+        queryset = Operation.objects.all()
+        resource_name = 'operation'
+        authorization = Authorization()
+
