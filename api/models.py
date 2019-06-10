@@ -1,19 +1,12 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
-
-class Profile(models.Model):
-    name = models.CharField(max_length=255)
-    email = models.CharField(max_length=255)
-    goodle_id = models.CharField(max_length=100)
-
-    def __str__(self):
-        return str(self.name)
 
 class Chart(models.Model):
     name = models.CharField(max_length=100)
     chart_type = models.CharField(max_length=100)
     series_type = models.CharField(max_length=100)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -23,7 +16,7 @@ class DataSource(models.Model):
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -34,7 +27,7 @@ class DataSet(models.Model):
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     y_axis_id = models.CharField(max_length=100)
     data = JSONField()
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.name)
@@ -44,4 +37,18 @@ class Operation(models.Model):
     dataset = models.ForeignKey(DataSet, on_delete=models.CASCADE)
     root_function = models.CharField(max_length=100)
     ast = JSONField()
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+def signals_import():
+    """ A note on signals.
+    The signals need to be imported early on so that they get registered
+    by the application. Putting the signals here makes sure of this since
+    the models package gets imported on the application startup.
+    Important note: added it as a function in case someone does a ctrl+shift+O
+    in eclipse, the import will not be moved to the top of this file.
+    """
+    from tastypie.models import create_api_key
+
+    models.signals.post_save.connect(create_api_key, sender=User)
+
+signals_import()

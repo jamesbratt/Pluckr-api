@@ -15,22 +15,16 @@ Including another URLconf
 """
 # urls.py
 from django.conf.urls import url, include
-from api.resources import ChartResource, DataSourceResource, DataSetResource, OperationResource
+from api.resources import ChartResource, DataSourceResource, DataSetResource, OperationResource, AuthenticationResource, SignupResource
 from tastypie.api import Api
-from api.views import Authenticate
 
-class PluckrApi(Api):
-
-    def prepend_urls(self):
-        return [
-            url(r"^(?P<api_name>v1)/authenticate/$", Authenticate.as_view(), name='authenticate'),
-        ]
-
-v1_api = PluckrApi(api_name='v1')
+v1_api = Api(api_name='v1')
 v1_api.register(ChartResource())
 v1_api.register(DataSourceResource())
 v1_api.register(DataSetResource())
 v1_api.register(OperationResource())
+v1_api.register(AuthenticationResource())
+v1_api.register(SignupResource())
 
 urlpatterns = [
     url(r'^api/', include(v1_api.urls)),
