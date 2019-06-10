@@ -1,8 +1,6 @@
 import json
-
 from tastypie.exceptions import TastypieError
 from tastypie.http import HttpBadRequest
-
 
 class CustomBadRequest(TastypieError):
     """

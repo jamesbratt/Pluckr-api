@@ -1,20 +1,16 @@
+from django.contrib.auth.models import User
+from django.conf.urls import url
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate
 from tastypie.resources import ModelResource, Resource
 from tastypie.authorization import Authorization
 from tastypie import fields
-from django.conf.urls import url
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from .models import Chart, DataSource, DataSet, Operation
 from tastypie.authentication import Authentication
-from django.contrib.auth.models import User
-from .exceptions import CustomBadRequest
-from django.contrib.auth.hashers import make_password
-
-from django.contrib.auth import authenticate, login
-from tastypie.http import HttpUnauthorized, HttpForbidden, HttpNotFound
+from tastypie.http import HttpUnauthorized, HttpForbidden
 from tastypie.authentication import ApiKeyAuthentication
-from django.conf.urls import url
 from tastypie.utils import trailing_slash
+from .exceptions import CustomBadRequest
+from .models import Chart, DataSource, DataSet, Operation
 
 class UserObjectsOnlyAuthorization(Authorization):
     def read_list(self, object_list, bundle):
@@ -90,7 +86,6 @@ class OperationResource(ModelResource):
         authorization = UserObjectsOnlyAuthorization()
 
 class SignupResource(ModelResource):
-    """Endpoint to create a new account for a user."""
 
     class Meta:
         queryset = User.objects.all()
