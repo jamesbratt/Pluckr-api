@@ -25,8 +25,8 @@ class DataSet(models.Model):
     name = models.CharField(max_length=100)
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
     data_source = models.ForeignKey(DataSource, on_delete=models.CASCADE)
-    y_axis_id = models.CharField(max_length=100)
-    data = JSONField()
+    y_axis_id = models.CharField(max_length=100, blank=True)
+    data = JSONField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):

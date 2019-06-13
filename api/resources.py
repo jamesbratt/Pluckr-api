@@ -57,16 +57,34 @@ class ChartResource(ModelResource):
     class Meta:
         queryset = Chart.objects.all()
         resource_name = 'chart'
+        always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
 
 class DataSourceResource(ModelResource):
     chart = fields.ForeignKey(ChartResource, 'chart')
     class Meta:
         queryset = DataSource.objects.all()
         resource_name = 'datasource'
+        always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
 
 class DataSetResource(ModelResource):
     chart = fields.ForeignKey(ChartResource, 'chart')
@@ -74,16 +92,34 @@ class DataSetResource(ModelResource):
     class Meta:
         queryset = DataSet.objects.all()
         resource_name = 'dataset'
+        always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
 
 class OperationResource(ModelResource):
     dataset = fields.ForeignKey(DataSetResource, 'dataset')
     class Meta:
         queryset = Operation.objects.all()
         resource_name = 'operation'
+        always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
 
 class SignupResource(ModelResource):
 
@@ -95,7 +131,6 @@ class SignupResource(ModelResource):
         authentication = Authentication()
         authorization = Authorization()
         resource_name = 'signup'
-        # fields = ['email', 'first_name', 'last_name', 'phone_number', 'username']
 
     def dehydrate(self, bundle):
         bundle.data['key'] = bundle.obj.api_key.key
