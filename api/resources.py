@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.conf.urls import url
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate
-from tastypie.resources import ModelResource, Resource
+from tastypie.resources import ModelResource, Resource, ALL_WITH_RELATIONS
 from tastypie.authorization import Authorization
 from tastypie import fields
 from tastypie.authentication import Authentication
@@ -77,6 +77,9 @@ class DataSourceResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+        filtering = {
+            'chart': ALL_WITH_RELATIONS,
+        }
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
@@ -95,6 +98,10 @@ class DataSetResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+        filtering = {
+            'chart': ALL_WITH_RELATIONS,
+            'data_source': ALL_WITH_RELATIONS,
+        }
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
@@ -112,6 +119,9 @@ class OperationResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+        filtering = {
+            'dataset': ALL_WITH_RELATIONS,
+        }
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
