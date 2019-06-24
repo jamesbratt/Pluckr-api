@@ -16,7 +16,7 @@ class DataSource(models.Model):
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
-    # params = JSONField(blank=True)
+    params = JSONField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):

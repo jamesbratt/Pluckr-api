@@ -85,10 +85,6 @@ class DataSourceResource(ModelResource):
         bundle.obj.user = bundle.request.user
         return bundle
 
-    def dehydrate(self, bundle):
-        del bundle.data['user']
-        return bundle
-
 class DataSetResource(ModelResource):
     chart = fields.ForeignKey(ChartResource, 'chart')
     data_source = fields.ForeignKey(DataSourceResource, 'data_source')
