@@ -103,10 +103,6 @@ class DataSetResource(ModelResource):
         bundle.obj.user = bundle.request.user
         return bundle
 
-    def dehydrate(self, bundle):
-        del bundle.data['user']
-        return bundle
-
 class OperationResource(ModelResource):
     dataset = fields.ForeignKey(DataSetResource, 'dataset')
     class Meta:
@@ -121,10 +117,6 @@ class OperationResource(ModelResource):
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
-        return bundle
-
-    def dehydrate(self, bundle):
-        del bundle.data['user']
         return bundle
 
 class SignupResource(ModelResource):
