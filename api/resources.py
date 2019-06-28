@@ -103,6 +103,10 @@ class DataSetResource(ModelResource):
         bundle.obj.user = bundle.request.user
         return bundle
 
+    def dehydrate(self, bundle):
+        bundle.data['chart'] = bundle.obj.chart_id
+        return bundle
+
 class OperationResource(ModelResource):
     dataset = fields.ForeignKey(DataSetResource, 'dataset')
     class Meta:
