@@ -70,6 +70,7 @@ class ChartResource(ModelResource):
         return bundle
 
 class DataSourceResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
     class Meta:
         queryset = DataSource.objects.all()
@@ -85,7 +86,13 @@ class DataSourceResource(ModelResource):
         bundle.obj.user = bundle.request.user
         return bundle
 
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        bundle.data['chart'] = bundle.obj.chart_id
+        return bundle
+
 class DataSetResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
     data_source = fields.ForeignKey(DataSourceResource, 'data_source')
     class Meta:
@@ -104,10 +111,13 @@ class DataSetResource(ModelResource):
         return bundle
 
     def dehydrate(self, bundle):
+        del bundle.data['user']
         bundle.data['chart'] = bundle.obj.chart_id
+        bundle.data['data_source'] = bundle.obj.data_source_id
         return bundle
 
 class OperationResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
     dataset = fields.ForeignKey(DataSetResource, 'dataset')
     class Meta:
         queryset = Operation.objects.all()
@@ -121,6 +131,11 @@ class OperationResource(ModelResource):
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        bundle.data['dataset'] = bundle.obj.dataset_id
         return bundle
 
 class SignupResource(ModelResource):
