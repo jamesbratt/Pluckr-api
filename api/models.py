@@ -38,6 +38,7 @@ class Operation(models.Model):
     dataset = models.ForeignKey(DataSet, on_delete=models.CASCADE)
     root_function = models.CharField(max_length=100)
     ast = JSONField()
+    sort_order = models.IntegerField(default=0)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 def signals_import():
