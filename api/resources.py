@@ -11,6 +11,7 @@ from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
 from .models import Chart, DataSource, DataSet, Operation
+from integrations.integrate import integrate
 
 class UserObjectsOnlyAuthorization(Authorization):
     def read_list(self, object_list, bundle):
@@ -217,4 +218,37 @@ class AuthenticationResource(Resource):
                 'success': False,
                 'reason': 'Incorrect user name or password',
                 }, HttpUnauthorized )
+
+class IntegrationResource(Resource):
+
+    def __get_api_key_for_user(self, user):
+        return '%s' % (user.api_key.key)
+
+    class Meta:
+        resource_name = 'integration'
+
+    def prepend_urls(self):
+        return [
+            url(r"^(?P<resource_name>%s)/authenticate%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('authenticateIntegration'), name="integration_authenticate"),
+        ]
+
+    def authenticateIntegration(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
+        integration_type = data.get('integration_type', '')
+        integration_payload = data.get('integration_payload', '')
+
+        try:
+            integration_response = integrate(integration_type, integration_payload)
+        except:
+            return self.create_response(request, {
+                'success': False,
+                'reason': 'Integration unauthorized',
+            }, HttpUnauthorized )
+
+        return self.create_response(request, {
+            'integation': integration_response,
+        })
 
