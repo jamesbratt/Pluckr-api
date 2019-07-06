@@ -226,6 +226,7 @@ class IntegrationResource(Resource):
 
     class Meta:
         resource_name = 'integration'
+        authentication = Authentication()
 
     def prepend_urls(self):
         return [
@@ -239,13 +240,14 @@ class IntegrationResource(Resource):
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         integration_type = data.get('integration_type', '')
         integration_payload = data.get('integration_payload', '')
+        user = data.get('user', '')
 
         try:
             integration_response = integrate(integration_type, integration_payload)
-        except:
+        except ValueError as error:
             return self.create_response(request, {
                 'success': False,
-                'reason': 'Integration unauthorized',
+                'reason': error,
             }, HttpUnauthorized )
 
         return self.create_response(request, {

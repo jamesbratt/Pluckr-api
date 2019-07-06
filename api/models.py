@@ -41,6 +41,14 @@ class Operation(models.Model):
     sort_order = models.IntegerField(default=0)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+class IntegrationAuth(models.Model):
+    integration_type = models.CharField(max_length=100)
+    access_token = models.TextField(blank=True) # Short/long-lived token
+    refresh_token = models.TextField(blank=True)
+    expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token
+    req_date = models.DateTimeField('date requested', blank=True) # The date and time that the access_token was requested
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
 def signals_import():
     """ A note on signals.
     The signals need to be imported early on so that they get registered
