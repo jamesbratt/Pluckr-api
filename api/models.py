@@ -43,6 +43,7 @@ class Operation(models.Model):
 
 class IntegrationAuth(models.Model):
     integration_type = models.CharField(max_length=100)
+    key = models.TextField(blank=True)
     access_token = models.TextField(blank=True) # Short/long-lived token
     refresh_token = models.TextField(blank=True)
     expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token

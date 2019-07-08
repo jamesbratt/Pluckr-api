@@ -219,38 +219,33 @@ class AuthenticationResource(Resource):
                 'reason': 'Incorrect user name or password',
                 }, HttpUnauthorized )
 
-class IntegrationResource(Resource):
-
-    def __get_api_key_for_user(self, user):
-        return '%s' % (user.api_key.key)
+class IntegrationAuthResource(Resource):
 
     class Meta:
-        resource_name = 'integration'
-        authentication = Authentication()
+        resource_name = 'integration-auth'
+        authentication = ApiKeyAuthentication()
 
-    def prepend_urls(self):
-        return [
-            url(r"^(?P<resource_name>%s)/authenticate%s$" %
-                (self._meta.resource_name, trailing_slash()),
-                self.wrap_view('authenticateIntegration'), name="integration_authenticate"),
-        ]
-
-    def authenticateIntegration(self, request, **kwargs):
-        self.method_check(request, allowed=['post'])
+    def dispatch(self, request_type, request, **kwargs):
+        self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         integration_type = data.get('integration_type', '')
         integration_payload = data.get('integration_payload', '')
-        user = data.get('user', '')
 
         try:
-            integration_response = integrate(integration_type, integration_payload)
+            response = integrate(integration_type, integration_payload, request)
         except ValueError as error:
             return self.create_response(request, {
                 'success': False,
                 'reason': error,
             }, HttpUnauthorized )
 
-        return self.create_response(request, {
-            'integation': integration_response,
-        })
+        return self.create_response(request, response)
 
+class IntegrationRequestResource(Resource):
+
+    class Meta:
+        resource_name = 'integration-request'
+        authentication = ApiKeyAuthentication()
+
+    def dispatch(self, request_type, request, **kwargs):
+        super(IntegrationRequestResource, self).dispatch(request_type, request, **kwargs)
