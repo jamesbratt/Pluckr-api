@@ -11,7 +11,7 @@ from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
 from .models import Chart, DataSource, DataSet, Operation
-from integrations.integrate import integrate
+from integrations.integrate import integrate, integrateRequest
 
 class UserObjectsOnlyAuthorization(Authorization):
     def read_list(self, object_list, bundle):
@@ -248,4 +248,17 @@ class IntegrationRequestResource(Resource):
         authentication = ApiKeyAuthentication()
 
     def dispatch(self, request_type, request, **kwargs):
-        super(IntegrationRequestResource, self).dispatch(request_type, request, **kwargs)
+        self.is_authenticated(request)
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
+        integration_url = data.get('url', '')
+        integration_key = data.get('integration_payload', '')
+
+        try:
+            response = integrateRequest(integration_url, integration_key)
+        except ValueError as error:
+            return self.create_response(request, {
+                'success': False,
+                'reason': error,
+            }, HttpUnauthorized )
+
+        return self.create_response(request, response)
