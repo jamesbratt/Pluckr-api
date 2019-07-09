@@ -43,7 +43,7 @@ def facebook_proxy_request(url, key):
     url_with_token = url + accesstoken_key_string + integration.access_token
 
     headers = {'Content-Type': 'application/json'}
-    response = requests.get(url_with_token, headers, verify=False)
+    response = requests.get(url_with_token, headers=headers, verify=False)
     if response.status_code is not 200:
         raise ValueError(response.json())
     return response.json()

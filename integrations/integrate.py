@@ -3,6 +3,7 @@ import datetime
 from datetime import timezone
 from cryptography.fernet import Fernet
 from integrations.facebook import facebook_authentication, facebook_proxy_request
+from integrations.salesforce import salesforce_authentication, salesforce_proxy_request
 from api.models import IntegrationAuth
 
 def integrate(integration_type, payload, request):
@@ -25,6 +26,29 @@ def integrate(integration_type, payload, request):
 
             return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
 
+    if integration_type == 'salesforce':
+        auth_response = salesforce_authentication(payload)
+        if auth_response:
+            expires_in = 7200
+            req_date = datetime.datetime.now(timezone.utc)
+            expiry_date = req_date + datetime.timedelta(seconds=expires_in)
+            auth_key = Fernet.generate_key()
+            integration_creds = IntegrationAuth(
+                integration_type=integration_type,
+                refresh_token=auth_response['refresh_token'],
+                key=auth_key.decode("utf-8"),
+                access_token=auth_response['access_token'],
+                expiry=expires_in,
+                req_date=req_date,
+                user=request.user,
+            )
+            integration_creds.save()
+
+            return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
+
 def integrateRequest(url, key, integration_type):
     if integration_type == 'facebook':
         return facebook_proxy_request(url, key)
+
+    if integration_type == 'salesforce':
+        return salesforce_proxy_request(url, key)
