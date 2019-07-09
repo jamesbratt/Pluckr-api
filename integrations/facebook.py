@@ -1,7 +1,10 @@
 import requests
+import datetime
+from datetime import timezone
+from api.models import IntegrationAuth
 from django.conf import settings
 
-FACEBOOK_TOKEN_URL = 'https://graph.facebook.com/v3.3/oauth/access_token';
+FACEBOOK_TOKEN_URL = 'https://graph.facebook.com/v3.3/oauth/access_token'
 
 def generate_url(endpoint, params):
     url = endpoint
@@ -14,7 +17,6 @@ def generate_url(endpoint, params):
 
 
 def facebook_authentication(payload):
-
     params = [
         ('client_id', settings.FACEBOOK_CLIENT_ID),
         ('redirect_uri', settings.FACEBOOK_REDIRECT_URI),
@@ -25,6 +27,23 @@ def facebook_authentication(payload):
     url = generate_url(FACEBOOK_TOKEN_URL, params)
 
     response = requests.get(url, verify=False)
+    if response.status_code is not 200:
+        raise ValueError(response.json())
+    return response.json()
+
+def facebook_proxy_request(url, key):
+    integration = IntegrationAuth.objects.get(key=key)
+    expiry_date = integration.req_date + datetime.timedelta(seconds=integration.expiry)
+    if expiry_date < datetime.datetime.now(timezone.utc):
+        # Get a new access token cause this ones expired
+        raise ValueError('Expired access token')
+
+    accesstoken_key_string = '?access_token=' if '?' not in url else '&access_token='
+
+    url_with_token = url + accesstoken_key_string + integration.access_token
+
+    headers = {'Content-Type': 'application/json'}
+    response = requests.get(url_with_token, headers, verify=False)
     if response.status_code is not 200:
         raise ValueError(response.json())
     return response.json()

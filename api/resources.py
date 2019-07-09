@@ -251,10 +251,11 @@ class IntegrationRequestResource(Resource):
         self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         integration_url = data.get('url', '')
-        integration_key = data.get('integration_payload', '')
+        integration_key = data.get('key', '')
+        integration_type = data.get('integration_type', '')
 
         try:
-            response = integrateRequest(integration_url, integration_key)
+            response = integrateRequest(integration_url, integration_key, integration_type)
         except ValueError as error:
             return self.create_response(request, {
                 'success': False,

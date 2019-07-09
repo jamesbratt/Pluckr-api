@@ -1,7 +1,8 @@
 import requests
-from datetime import datetime, timezone
+import datetime
+from datetime import timezone
 from cryptography.fernet import Fernet
-from integrations.facebook import facebook_authentication
+from integrations.facebook import facebook_authentication, facebook_proxy_request
 from api.models import IntegrationAuth
 
 def integrate(integration_type, payload, request):
@@ -24,15 +25,6 @@ def integrate(integration_type, payload, request):
 
             return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
 
-def integrateRequest(url, key):
-    integration = IntegrationAuth.objects.get(key=key)
-    expiry_date = integration.req_date + datetime.timedelta(seconds=integration.expiry)
-    if expiry_date < datetime.datetime.now(timezone.utc):
-        # Get a new access token cause this ones expired
-        raise ValueError('Expired access token')
-
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + integration.access_token}
-    response = requests.get(url, headers, verify=False)
-    if response.status_code is not 200:
-        raise ValueError(response.json())
-    return response.json()
+def integrateRequest(url, key, integration_type):
+    if integration_type == 'facebook':
+        return facebook_proxy_request(url, key)
