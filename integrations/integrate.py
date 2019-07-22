@@ -2,11 +2,29 @@ import requests
 import datetime
 from datetime import timezone
 from cryptography.fernet import Fernet
+from integrations.github import github_authentication, github_proxy_request
 from integrations.facebook import facebook_authentication, facebook_proxy_request
 from integrations.salesforce import salesforce_authentication, salesforce_proxy_request
 from api.models import IntegrationAuth
 
 def integrate(integration_type, payload, request):
+    if integration_type == 'github':
+        auth_response = github_authentication(payload)
+        if auth_response:
+            req_date = datetime.datetime.now(timezone.utc)
+            auth_key = Fernet.generate_key()
+            integration_creds = IntegrationAuth(
+                integration_type=integration_type,
+                key=auth_key.decode("utf-8"),
+                access_token=auth_response['access_token'],
+                expiry=0,
+                req_date=req_date,
+                user=request.user,
+            )
+            integration_creds.save()
+
+            return { 'key': auth_key, 'expiry': 0, 'provider': integration_type }
+
     if integration_type == 'facebook':
         auth_response = facebook_authentication(payload)
         if auth_response:
@@ -47,6 +65,9 @@ def integrate(integration_type, payload, request):
             return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
 
 def integrateRequest(url, key, integration_type):
+    if integration_type == 'github':
+        return github_proxy_request(url, key)
+
     if integration_type == 'facebook':
         return facebook_proxy_request(url, key)
 
