@@ -6,6 +6,9 @@ class Chart(models.Model):
     name = models.CharField(max_length=100)
     chart_type = models.CharField(max_length=100)
     series_type = models.CharField(max_length=100)
+    background_color = models.CharField(max_length=100, blank=True)
+    x_axis_title = models.CharField(max_length=100, blank=True)
+    x_axis_enabled = models.BooleanField(default=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -29,6 +32,8 @@ class DataSet(models.Model):
     y_axis_enabled = models.BooleanField(default=False, blank=True)
     y_axis_is_opposite = models.BooleanField(default=False, blank=True)
     y_axis_title = models.CharField(max_length=100, blank=True)
+    y_axis_id = models.CharField(max_length=100, blank=True)
+    color = models.CharField(max_length=100, blank=True)
     data = JSONField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
