@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 
+class Workspace(models.Model):
+    title = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.title)
+
 class IntegrationAuth(models.Model):
     integration_type = models.CharField(max_length=100)
     key = models.TextField(blank=True)
@@ -10,6 +17,7 @@ class IntegrationAuth(models.Model):
     expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token
     req_date = models.DateTimeField('date requested', blank=True) # The date and time that the access_token was requested
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
 class Chart(models.Model):
     name = models.CharField(max_length=100)
@@ -19,6 +27,7 @@ class Chart(models.Model):
     x_axis_title = models.CharField(max_length=100, blank=True)
     x_axis_enabled = models.BooleanField(default=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return str(self.name)
@@ -31,6 +40,7 @@ class DataSource(models.Model):
     params = JSONField(blank=True)
     integration_auth = models.ForeignKey(IntegrationAuth, on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return str(self.name)
@@ -46,6 +56,7 @@ class DataSet(models.Model):
     color = models.CharField(max_length=100, blank=True)
     data = JSONField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return str(self.name)
@@ -57,6 +68,7 @@ class Operation(models.Model):
     ast = JSONField()
     sort_order = models.IntegerField(default=0)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
 def signals_import():
     """ A note on signals.
