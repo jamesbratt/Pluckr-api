@@ -2,6 +2,15 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 
+class IntegrationAuth(models.Model):
+    integration_type = models.CharField(max_length=100)
+    key = models.TextField(blank=True)
+    access_token = models.TextField(blank=True) # Short/long-lived token
+    refresh_token = models.TextField(blank=True)
+    expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token
+    req_date = models.DateTimeField('date requested', blank=True) # The date and time that the access_token was requested
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
 class Chart(models.Model):
     name = models.CharField(max_length=100)
     chart_type = models.CharField(max_length=100)
@@ -20,6 +29,7 @@ class DataSource(models.Model):
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
     params = JSONField(blank=True)
+    integration_auth = models.ForeignKey(IntegrationAuth, on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -46,15 +56,6 @@ class Operation(models.Model):
     root_function = models.CharField(max_length=100)
     ast = JSONField()
     sort_order = models.IntegerField(default=0)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-class IntegrationAuth(models.Model):
-    integration_type = models.CharField(max_length=100)
-    key = models.TextField(blank=True)
-    access_token = models.TextField(blank=True) # Short/long-lived token
-    refresh_token = models.TextField(blank=True)
-    expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token
-    req_date = models.DateTimeField('date requested', blank=True) # The date and time that the access_token was requested
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 def signals_import():
