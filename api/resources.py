@@ -10,7 +10,7 @@ from tastypie.http import HttpUnauthorized, HttpForbidden
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
-from .models import Chart, DataSource, DataSet, Operation
+from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth
 from integrations.integrate import integrate, integrateRequest
 
 class UserObjectsOnlyAuthorization(Authorization):
@@ -52,6 +52,29 @@ class UserResource(ModelResource):
         authentication = ApiKeyAuthentication()
         authorization = Authorization()
 
+class IntegrationResource(ModelResource):
+    class Meta:
+        queryset = IntegrationAuth.objects.all()
+        resource_name = 'integration_auth'
+        authentication = ApiKeyAuthentication()
+        authorization = Authorization()
+
+class WorkspaceResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
+    class Meta:
+        queryset = Workspace.objects.all()
+        resource_name = 'workspace'
+        always_return_data = True
+        authentication = ApiKeyAuthentication()
+        authorization = UserObjectsOnlyAuthorization()
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
 
 class ChartResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
@@ -73,6 +96,7 @@ class ChartResource(ModelResource):
 class DataSourceResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
+    integration_auth = fields.ForeignKey(IntegrationResource, 'integration_auth')
     class Meta:
         queryset = DataSource.objects.all()
         resource_name = 'datasource'
@@ -90,6 +114,7 @@ class DataSourceResource(ModelResource):
     def dehydrate(self, bundle):
         del bundle.data['user']
         bundle.data['chart'] = bundle.obj.chart_id
+        bundle.data['integration_auth'] = bundle.obj.integration_auth_id
         return bundle
 
 class DataSetResource(ModelResource):
@@ -250,12 +275,13 @@ class IntegrationRequestResource(Resource):
     def dispatch(self, request_type, request, **kwargs):
         self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
-        integration_url = data.get('url', '')
-        integration_key = data.get('key', '')
-        integration_type = data.get('integration_type', '')
+        integration_url = data.get('url', None)
+        integration_key = data.get('key', None)
+        integration_type = data.get('integration_type', None)
+        source_id = data.get('source_id', None)
 
         try:
-            response = integrateRequest(integration_url, integration_key, integration_type)
+            response = integrateRequest(integration_url, integration_key, integration_type, source_id)
         except ValueError as error:
             return self.create_response(request, {
                 'success': False,

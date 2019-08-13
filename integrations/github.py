@@ -2,7 +2,7 @@ from datetime import timezone
 import datetime
 import requests
 from django.conf import settings
-from api.models import IntegrationAuth
+from api.models import IntegrationAuth, DataSource
 
 GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 
@@ -24,6 +24,14 @@ def github_request(url, token):
         raise ValueError(response.json())
     return response.json()
 
-def github_proxy_request(url, key):
-    integration = IntegrationAuth.objects.get(key=key)
+def github_proxy_request(url, key, source_id):
+    if key is not None:
+        integration = IntegrationAuth.objects.get(key=key)
+
+    if key is None and source_id is not None:
+        integration = DataSource.objects.get(pk=source_id).integration_auth
+
+    if key is None and source_id is None:
+        raise ValueError('Unable to retrieve integration token')
+
     return github_request(url, integration.access_token)

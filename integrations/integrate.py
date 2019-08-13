@@ -23,7 +23,7 @@ def integrate(integration_type, payload, request):
             )
             integration_creds.save()
 
-            return { 'key': auth_key, 'expiry': 0, 'provider': integration_type }
+            return {'id': integration_creds.pk, 'key': auth_key, 'provider': integration_type}
 
     if integration_type == 'facebook':
         auth_response = facebook_authentication(payload)
@@ -42,7 +42,7 @@ def integrate(integration_type, payload, request):
             )
             integration_creds.save()
 
-            return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
+            return {'id': integration_creds.pk, 'key': auth_key, 'provider': integration_type}
 
     if integration_type == 'salesforce':
         auth_response = salesforce_authentication(payload)
@@ -62,14 +62,14 @@ def integrate(integration_type, payload, request):
             )
             integration_creds.save()
 
-            return { 'key': auth_key, 'expiry': expiry_date, 'provider': integration_type }
+            return {'id': integration_creds.pk, 'key': auth_key, 'provider': integration_type}
 
-def integrateRequest(url, key, integration_type):
+def integrateRequest(url, key, integration_type, source_id):
     if integration_type == 'github':
-        return github_proxy_request(url, key)
+        return github_proxy_request(url, key, source_id)
 
     if integration_type == 'facebook':
-        return facebook_proxy_request(url, key)
+        return facebook_proxy_request(url, key, source_id)
 
     if integration_type == 'salesforce':
-        return salesforce_proxy_request(url, key)
+        return salesforce_proxy_request(url, key, source_id)

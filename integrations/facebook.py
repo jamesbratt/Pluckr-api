@@ -1,7 +1,7 @@
 import requests
 import datetime
 from datetime import timezone
-from api.models import IntegrationAuth
+from api.models import IntegrationAuth, DataSource
 from django.conf import settings
 
 FACEBOOK_TOKEN_URL = 'https://graph.facebook.com/v3.3/oauth/access_token'
@@ -31,8 +31,16 @@ def facebook_authentication(payload):
         raise ValueError(response.json())
     return response.json()
 
-def facebook_proxy_request(url, key):
-    integration = IntegrationAuth.objects.get(key=key)
+def facebook_proxy_request(url, key, source_id):
+    if key is not None:
+        integration = IntegrationAuth.objects.get(key=key)
+
+    if key is None and source_id is not None:
+        integration = DataSource.objects.get(pk=source_id).integration_auth
+
+    if key is None and source_id is None:
+        raise ValueError('Unable to retrieve integration token')
+
     expiry_date = integration.req_date + datetime.timedelta(seconds=integration.expiry)
     if expiry_date < datetime.datetime.now(timezone.utc):
         # Get a new access token cause this ones expired

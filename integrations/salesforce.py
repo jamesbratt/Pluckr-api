@@ -2,7 +2,7 @@ from datetime import timezone
 import datetime
 import requests
 from django.conf import settings
-from api.models import IntegrationAuth
+from api.models import IntegrationAuth, DataSource
 
 SALESFORCE_TOKEN_URL = 'https://login.salesforce.com/services/oauth2/token'
 
@@ -33,8 +33,16 @@ def salesforce_request(url, token):
         raise ValueError(response.json())
     return response.json()
 
-def salesforce_proxy_request(url, key):
-    integration = IntegrationAuth.objects.get(key=key)
+def salesforce_proxy_request(url, key, source_id):
+    if key is not None:
+        integration = IntegrationAuth.objects.get(key=key)
+
+    if key is None and source_id is not None:
+        integration = DataSource.objects.get(pk=source_id).integration_auth
+
+    if key is None and source_id is None:
+        raise ValueError('Unable to retrieve integration token')
+   
     expiry_date = integration.req_date + datetime.timedelta(seconds=integration.expiry)
     if expiry_date < datetime.datetime.now(timezone.utc):
 
