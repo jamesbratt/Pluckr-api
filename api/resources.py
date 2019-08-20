@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth.models import User
 from django.conf.urls import url
 from django.contrib.auth.hashers import make_password
@@ -190,6 +191,13 @@ class SignupResource(ModelResource):
                     .format(missing_key=field))
         try:
             username = bundle.data["username"]
+            email_regex = re.compile(r"^.+@(\[?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?)$")
+
+            if not email_regex.match(username):
+                raise CustomBadRequest(
+                    code="invalid_email",
+                    message="The email address submitted is invalid.")
+
             if User.objects.filter(username=username):
                 raise CustomBadRequest(
                     code="duplicate_exception",
