@@ -181,7 +181,7 @@ class SignupResource(ModelResource):
         return bundle
 
     def obj_create(self, bundle, **kwargs):
-        REQUIRED_USER_FIELDS = ("username", "email", "first_name", "last_name", "raw_password")
+        REQUIRED_USER_FIELDS = ("username", "raw_password")
         for field in REQUIRED_USER_FIELDS:
             if field not in bundle.data:
                 raise CustomBadRequest(
