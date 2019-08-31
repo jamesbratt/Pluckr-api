@@ -7,11 +7,12 @@ from tastypie.resources import ModelResource, Resource, ALL_WITH_RELATIONS
 from tastypie.authorization import Authorization
 from tastypie import fields
 from tastypie.authentication import Authentication
-from tastypie.http import HttpUnauthorized, HttpForbidden
+from tastypie.http import HttpUnauthorized, HttpForbidden, HttpBadRequest
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
 from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth
+from .utils import clone_chart
 from integrations.integrate import integrate, integrateRequest
 
 class UserObjectsOnlyAuthorization(Authorization):
@@ -80,7 +81,7 @@ class WorkspaceResource(ModelResource):
 class ChartResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     class Meta:
-        queryset = Chart.objects.all()
+        queryset = Chart.objects.filter(is_published=False)
         resource_name = 'chart'
         always_return_data = True
         authentication = ApiKeyAuthentication()
@@ -107,6 +108,9 @@ class ChartLibraryResource(ModelResource):
             url(r"^(?P<resource_name>%s)/publish%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('publish'), name="publish"),
+            url(r"^(?P<resource_name>%s)/install%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('install'), name="install"),
         ]
 
     def publish(self, request, **kwargs):
@@ -115,80 +119,36 @@ class ChartLibraryResource(ModelResource):
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         chart_id = data.get('chart_id', '')
 
-        # Get the chart
-        chart_to_publish = Chart.objects.get(pk=chart_id)
-
-        # Get all its datasources
-        datasources_tobe_published = chart_to_publish.datasource_set.all()
-
-        # Clone chart
-        published_chart = Chart(
-            name = chart_to_publish.name + '-clone',
-            chart_type = chart_to_publish.chart_type,
-            series_type = chart_to_publish.series_type,
-            background_color = chart_to_publish.background_color,
-            x_axis_title = chart_to_publish.x_axis_title,
-            x_axis_enabled = chart_to_publish.x_axis_enabled,
-            is_published = True,
-            user = request.user,
-        )
-        published_chart.save()
-
-        for datasource in datasources_tobe_published:
-            # For every data source create a clone
-            published_datasource = DataSource(
-                name = datasource.name,
-                chart = published_chart,
-                provider = datasource.provider,
-                resource = datasource.resource,
-                params = None,
-                user = request.user,
-            )
-            published_datasource.save()
-
-            # For every data source find its datasets
-            datasets_tobe_published = datasource.dataset_set.all()
-            for dataset in datasets_tobe_published:
-                # Clone each dataset
-                published_dataset = DataSet(
-                    name = dataset.name,
-                    chart = published_chart,
-                    data_source = published_datasource,
-                    y_axis_enabled = dataset.y_axis_enabled,
-                    y_axis_is_opposite = dataset.y_axis_is_opposite,
-                    y_axis_title = dataset.y_axis_title,
-                    y_axis_id = dataset.y_axis_id,
-                    color = dataset.color,
-                    data = '[]',
-                    user = request.user,
-                )
-                published_dataset.save()
-
-                # For every dataset find its operations
-                operations_tobe_published = dataset.operation_set.all()
-                for operation in operations_tobe_published:
-                    # Clone each operation
-                    published_operation = Operation(
-                        name = operation.name,
-                        dataset = published_dataset,
-                        root_function = operation.root_function,
-                        ast = operation.ast,
-                        sort_order = operation.sort_order,
-                        user = request.user,
-                    )
-                    published_operation.save()
+        try:
+            clone_chart(chart_id, request, True)
+        except ValueError as error:
+            return self.create_response(request, {
+                'success': False,
+                'reason': error,
+            }, HttpBadRequest )
 
         return self.create_response(request, {
             'success': True,
+            'message': 'Your chart has been successfully published'
         })
 
     def install(self, request, **kwargs):
         self.method_check(request, allowed=['post'])
+        self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
-        username = data.get('username', '')
-        password = data.get('password', '')
+        chart_id = data.get('chart_id', '')
+
+        try:
+            clone_chart(chart_id, request, False)
+        except ValueError as error:
+            return self.create_response(request, {
+                'success': False,
+                'reason': error,
+            }, HttpBadRequest )
+
         return self.create_response(request, {
-            'username': username
+            'success': True,
+            'message': 'Your chart has been successfully installed'
         })
 
 class DataSourceResource(ModelResource):
