@@ -94,6 +94,103 @@ class ChartResource(ModelResource):
         del bundle.data['user']
         return bundle
 
+class ChartLibraryResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
+    class Meta:
+        queryset = Chart.objects.filter(is_published=True)
+        resource_name = 'library'
+        always_return_data = True
+        authentication = ApiKeyAuthentication()
+
+    def prepend_urls(self):
+        return [
+            url(r"^(?P<resource_name>%s)/publish%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('publish'), name="publish"),
+        ]
+
+    def publish(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        self.is_authenticated(request)
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
+        chart_id = data.get('chart_id', '')
+
+        # Get the chart
+        chart_to_publish = Chart.objects.get(pk=chart_id)
+
+        # Get all its datasources
+        datasources_tobe_published = chart_to_publish.datasource_set.all()
+
+        # Clone chart
+        published_chart = Chart(
+            name = chart_to_publish.name + '-clone',
+            chart_type = chart_to_publish.chart_type,
+            series_type = chart_to_publish.series_type,
+            background_color = chart_to_publish.background_color,
+            x_axis_title = chart_to_publish.x_axis_title,
+            x_axis_enabled = chart_to_publish.x_axis_enabled,
+            is_published = True,
+            user = request.user,
+        )
+        published_chart.save()
+
+        for datasource in datasources_tobe_published:
+            # For every data source create a clone
+            published_datasource = DataSource(
+                name = datasource.name,
+                chart = published_chart,
+                provider = datasource.provider,
+                resource = datasource.resource,
+                params = None,
+                user = request.user,
+            )
+            published_datasource.save()
+
+            # For every data source find its datasets
+            datasets_tobe_published = datasource.dataset_set.all()
+            for dataset in datasets_tobe_published:
+                # Clone each dataset
+                published_dataset = DataSet(
+                    name = dataset.name,
+                    chart = published_chart,
+                    data_source = published_datasource,
+                    y_axis_enabled = dataset.y_axis_enabled,
+                    y_axis_is_opposite = dataset.y_axis_is_opposite,
+                    y_axis_title = dataset.y_axis_title,
+                    y_axis_id = dataset.y_axis_id,
+                    color = dataset.color,
+                    data = '[]',
+                    user = request.user,
+                )
+                published_dataset.save()
+
+                # For every dataset find its operations
+                operations_tobe_published = dataset.operation_set.all()
+                for operation in operations_tobe_published:
+                    # Clone each operation
+                    published_operation = Operation(
+                        name = operation.name,
+                        dataset = published_dataset,
+                        root_function = operation.root_function,
+                        ast = operation.ast,
+                        sort_order = operation.sort_order,
+                        user = request.user,
+                    )
+                    published_operation.save()
+
+        return self.create_response(request, {
+            'success': True,
+        })
+
+    def install(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
+        username = data.get('username', '')
+        password = data.get('password', '')
+        return self.create_response(request, {
+            'username': username
+        })
+
 class DataSourceResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')

@@ -26,6 +26,7 @@ class Chart(models.Model):
     background_color = models.CharField(max_length=100, blank=True)
     x_axis_title = models.CharField(max_length=100, blank=True)
     x_axis_enabled = models.BooleanField(default=True, blank=True)
+    is_published = models.BooleanField(default=False, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -37,7 +38,7 @@ class DataSource(models.Model):
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
-    params = JSONField(blank=True)
+    params = JSONField(blank=True, null=True)
     integration_auth = models.ForeignKey(IntegrationAuth, on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
@@ -54,7 +55,7 @@ class DataSet(models.Model):
     y_axis_title = models.CharField(max_length=100, blank=True)
     y_axis_id = models.CharField(max_length=100, blank=True)
     color = models.CharField(max_length=100, blank=True)
-    data = JSONField(blank=True)
+    data = JSONField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
