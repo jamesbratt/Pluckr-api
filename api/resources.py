@@ -148,9 +148,11 @@ class ChartLibraryResource(ModelResource):
                 'reason': error,
             }, HttpBadRequest )
 
+        cloned_chart_to_json = json.loads(serializers.serialize("json", [cloned_chart]))[0]['fields']
+        cloned_chart_to_json['id'] = json.loads(serializers.serialize("json", [cloned_chart]))[0]['pk']
         return self.create_response(request, {
             'success': True,
-            'chart': json.loads(serializers.serialize("json", [cloned_chart]))[0]['fields']
+            'chart': cloned_chart_to_json
         })
 
 class DataSourceResource(ModelResource):
