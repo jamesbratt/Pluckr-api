@@ -81,7 +81,7 @@ class WorkspaceResource(ModelResource):
 class ChartResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     class Meta:
-        queryset = Chart.objects.filter(is_published=False)
+        queryset = Chart.objects.all()
         resource_name = 'chart'
         always_return_data = True
         authentication = ApiKeyAuthentication()
@@ -120,7 +120,7 @@ class ChartLibraryResource(ModelResource):
         chart_id = data.get('chart_id', '')
 
         try:
-            clone_chart(chart_id, request, True)
+            clone_chart(chart_id, request, True, None)
         except ValueError as error:
             return self.create_response(request, {
                 'success': False,
@@ -137,9 +137,10 @@ class ChartLibraryResource(ModelResource):
         self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         chart_id = data.get('chart_id', '')
+        tokens = data.get('tokens', '')
 
         try:
-            clone_chart(chart_id, request, False)
+            cloned_chart = clone_chart(chart_id, request, False, tokens)
         except ValueError as error:
             return self.create_response(request, {
                 'success': False,
@@ -148,7 +149,7 @@ class ChartLibraryResource(ModelResource):
 
         return self.create_response(request, {
             'success': True,
-            'message': 'Your chart has been successfully installed'
+            'chart_id': cloned_chart
         })
 
 class DataSourceResource(ModelResource):

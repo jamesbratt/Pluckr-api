@@ -1,11 +1,17 @@
-from .models import Chart, DataSource, DataSet, Operation
+from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 
-def clone_chart(chart_id, request, is_published):
+def clone_chart(chart_id, request, is_published, tokens):
     # Get the chart
     chart_to_clone = Chart.objects.get(pk=chart_id)
 
     # Get all its datasources
     datasources_tobe_cloned = chart_to_clone.datasource_set.all()
+
+    # Check that we have a token for every datasource to be cloned
+    if tokens is not None:
+        for datasource in datasources_tobe_cloned:
+            if datasource.provider not in tokens:
+                raise ValueError('You appear to not be connected to the ' + datasource.provider + ' provider.')
 
     # Clone chart
     cloned_chart = Chart(
@@ -22,12 +28,18 @@ def clone_chart(chart_id, request, is_published):
 
     for datasource in datasources_tobe_cloned:
         # For every data source create a clone
+        integration = None
+        if tokens is not None:
+            integration_key = tokens[datasource.provider]['key']
+            integration = IntegrationAuth.objects.get(key=integration_key)
+
         cloned_datasource = DataSource(
             name = datasource.name,
             chart = cloned_chart,
             provider = datasource.provider,
             resource = datasource.resource,
-            params = None,
+            params = datasource.params,
+            integration_auth = integration,
             user = request.user,
         )
         cloned_datasource.save()
@@ -63,3 +75,5 @@ def clone_chart(chart_id, request, is_published):
                     user = request.user,
                 )
                 cloned_operation.save()
+
+    return cloned_chart.id
