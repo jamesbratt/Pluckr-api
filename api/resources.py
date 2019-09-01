@@ -1,4 +1,5 @@
-import re
+import re, json
+from django.core import serializers
 from django.contrib.auth.models import User
 from django.conf.urls import url
 from django.contrib.auth.hashers import make_password
@@ -149,7 +150,7 @@ class ChartLibraryResource(ModelResource):
 
         return self.create_response(request, {
             'success': True,
-            'chart_id': cloned_chart
+            'chart': json.loads(serializers.serialize("json", [cloned_chart]))[0]['fields']
         })
 
 class DataSourceResource(ModelResource):

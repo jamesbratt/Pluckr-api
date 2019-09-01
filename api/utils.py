@@ -76,4 +76,4 @@ def clone_chart(chart_id, request, is_published, tokens):
                 )
                 cloned_operation.save()
 
-    return cloned_chart.id
+    return cloned_chart
