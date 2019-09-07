@@ -143,10 +143,9 @@ class ChartLibraryResource(ModelResource):
         try:
             cloned_chart = clone_chart(chart_id, request, False, tokens)
         except ValueError as error:
-            return self.create_response(request, {
-                'success': False,
-                'reason': error,
-            }, HttpBadRequest )
+            raise CustomBadRequest(
+                code="installation_error",
+                message=str(error))
 
         cloned_chart_to_json = json.loads(serializers.serialize("json", [cloned_chart]))[0]['fields']
         cloned_chart_to_json['id'] = json.loads(serializers.serialize("json", [cloned_chart]))[0]['pk']
@@ -328,10 +327,9 @@ class IntegrationAuthResource(Resource):
         try:
             response = integrate(integration_type, integration_payload, request)
         except ValueError as error:
-            return self.create_response(request, {
-                'success': False,
-                'reason': error,
-            }, HttpUnauthorized )
+            raise CustomBadRequest(
+                code="integration_authentication_error",
+                message=str(error))
 
         return self.create_response(request, response)
 
@@ -352,9 +350,8 @@ class IntegrationRequestResource(Resource):
         try:
             response = integrateRequest(integration_url, integration_key, integration_type, source_id)
         except ValueError as error:
-            return self.create_response(request, {
-                'success': False,
-                'reason': error,
-            }, HttpUnauthorized )
+            raise CustomBadRequest(
+                code="integration_proxy_error",
+                message=str(error))
 
         return self.create_response(request, response)
