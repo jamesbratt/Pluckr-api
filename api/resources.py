@@ -1,9 +1,11 @@
 import re, json
 from django.core import serializers
+from django.core import exceptions
 from django.contrib.auth.models import User
 from django.conf.urls import url
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from tastypie.resources import ModelResource, Resource, ALL_WITH_RELATIONS
 from tastypie.authorization import Authorization
 from tastypie import fields
@@ -273,6 +275,14 @@ class SignupResource(ModelResource):
             pass
 
         raw_password = bundle.data.pop('raw_password')
+
+        try: 
+            validate_password(raw_password)
+        except exceptions.ValidationError as error:
+            raise CustomBadRequest(
+                code="password_validation_error",
+                message=str(error.messages[0]))
+  
         bundle.data["password"] = make_password(raw_password)
         return super(SignupResource, self).obj_create(bundle, **kwargs)
 
