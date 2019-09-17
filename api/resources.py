@@ -212,6 +212,8 @@ class OperationResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
+        limit = 0
+        max_limit = 0
         filtering = {
             'dataset': ALL_WITH_RELATIONS,
         }
