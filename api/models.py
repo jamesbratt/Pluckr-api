@@ -39,6 +39,7 @@ class DataSource(models.Model):
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
     params = JSONField(blank=True, null=True)
+    pages = models.IntegerField(blank=True, null=True, default=0)
     integration_auth = models.ForeignKey(IntegrationAuth, on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)

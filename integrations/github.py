@@ -25,13 +25,25 @@ def github_request(url, token):
     return response.json()
 
 def github_proxy_request(url, key, source_id):
+    pages = 0
     if key is not None:
         integration = IntegrationAuth.objects.get(key=key)
 
     if key is None and source_id is not None:
         integration = DataSource.objects.get(pk=source_id).integration_auth
+        pages = DataSource.objects.get(pk=source_id).pages
 
     if key is None and source_id is None:
         raise ValueError('Unable to retrieve integration token')
 
-    return github_request(url, integration.access_token)
+    if pages == 0:
+        return github_request(url, integration.access_token)
+    else:
+        concatenated_responses = []
+        for page in range(pages + 1):
+            if page != 0:
+                page_param = '&page=' + str(page)
+                req = github_request(url + page_param, integration.access_token)
+                concatenated_responses = concatenated_responses + req
+        return concatenated_responses
+  
