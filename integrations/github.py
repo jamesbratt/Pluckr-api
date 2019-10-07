@@ -5,6 +5,8 @@ from django.conf import settings
 from api.models import IntegrationAuth, DataSource
 
 GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
+PAGE_LIMIT = 100
+REQUEST_LIMIT = 10
 
 def github_authentication(payload):
     payload = {
@@ -17,12 +19,18 @@ def github_authentication(payload):
         raise ValueError(response.json())
     return response.json()
 
-def github_request(url, token):
+def github_request(url, token, responses = [], page = 1):
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         raise ValueError(response.json())
-    return response.json()
+    if page > REQUEST_LIMIT:
+        raise ValueError('Too many page requests required, try making your request more specific by applying parameters')
+    if len(response.json()) == PAGE_LIMIT:
+        page_param = '&page=' + str(page + 1)
+        return github_request(url + page_param, token, responses + response.json(), page + 1)
+    else:
+        return responses + response.json()
 
 def github_proxy_request(url, key, source_id):
     pages = 0
