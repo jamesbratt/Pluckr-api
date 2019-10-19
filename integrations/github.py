@@ -8,6 +8,15 @@ GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 PAGE_LIMIT = 100
 REQUEST_LIMIT = 10
 
+def generate_url(endpoint, params):
+    url = endpoint
+    for i, (param_key, param) in enumerate(params):
+        symbol = '&'
+        if i is 0 and '?' not in url:
+            symbol = '?'
+        url += str(symbol + param_key + '=' + param)
+    return url
+
 def github_authentication(payload):
     payload = {
         'client_id': settings.GITHUB_CLIENT_ID,
@@ -19,7 +28,7 @@ def github_authentication(payload):
         raise ValueError(response.json())
     return response.json()
 
-def github_request(url, token, responses = [], page = 1):
+def github_request(url, originalUrl, token, responses = [], page=1):
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
@@ -27,8 +36,7 @@ def github_request(url, token, responses = [], page = 1):
     if page > REQUEST_LIMIT:
         raise ValueError('Too many page requests required, try making your request more specific by applying parameters')
     if len(response.json()) == PAGE_LIMIT:
-        page_param = '&page=' + str(page + 1)
-        return github_request(url + page_param, token, responses + response.json(), page + 1)
+        return github_request(generate_url(originalUrl, [('page', str(page + 1))]), originalUrl, token, responses + response.json(), page + 1)
     else:
         return responses + response.json()
 
@@ -45,13 +53,14 @@ def github_proxy_request(url, key, source_id):
         raise ValueError('Unable to retrieve integration token')
 
     if pages == 0:
-        return github_request(url, integration.access_token)
+        finalUrl = generate_url(url, [('per_page', '100')])
+        return github_request(finalUrl, finalUrl, integration.access_token)
     else:
         concatenated_responses = []
         for page in range(pages + 1):
             if page != 0:
                 page_param = '&page=' + str(page)
-                req = github_request(url + page_param, integration.access_token)
+                req = github_request(url + page_param, url, integration.access_token)
                 concatenated_responses = concatenated_responses + req
         return concatenated_responses
   
