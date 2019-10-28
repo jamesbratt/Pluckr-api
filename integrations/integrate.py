@@ -3,6 +3,7 @@ import datetime
 from datetime import timezone
 from cryptography.fernet import Fernet
 from integrations.github import github_authentication, github_proxy_request
+from integrations.jira import jira_authentication, jira_proxy_request
 from integrations.facebook import facebook_authentication, facebook_proxy_request
 from integrations.salesforce import salesforce_authentication, salesforce_proxy_request
 from api.models import IntegrationAuth
@@ -17,6 +18,24 @@ def integrate(integration_type, payload, request):
                 integration_type=integration_type,
                 key=auth_key.decode("utf-8"),
                 access_token=auth_response['access_token'],
+                expiry=0,
+                req_date=req_date,
+                user=request.user,
+            )
+            integration_creds.save()
+
+            return {'id': integration_creds.pk, 'key': auth_key, 'provider': integration_type}
+
+    if integration_type == 'jira':
+        auth_response = jira_authentication(payload)
+        if auth_response:
+            req_date = datetime.datetime.now(timezone.utc)
+            auth_key = Fernet.generate_key()
+            integration_creds = IntegrationAuth(
+                integration_type=integration_type,
+                key=auth_key.decode("utf-8"),
+                access_token=auth_response['access_token'],
+                site_id=auth_response['cloud_id'],
                 expiry=0,
                 req_date=req_date,
                 user=request.user,
