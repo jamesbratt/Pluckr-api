@@ -30,13 +30,15 @@ def integrate(integration_type, payload, request):
         auth_response = jira_authentication(payload)
         if auth_response:
             req_date = datetime.datetime.now(timezone.utc)
+            expires_in = auth_response['expires_in']
+            expiry_date = req_date + datetime.timedelta(seconds=expires_in)
             auth_key = Fernet.generate_key()
             integration_creds = IntegrationAuth(
                 integration_type=integration_type,
                 key=auth_key.decode("utf-8"),
                 access_token=auth_response['access_token'],
-                site_id=auth_response['cloud_id'],
-                expiry=0,
+                refresh_token=auth_response['refresh_token'],
+                expiry=expires_in,
                 req_date=req_date,
                 user=request.user,
             )
@@ -92,3 +94,6 @@ def integrateRequest(url, key, integration_type, source_id):
 
     if integration_type == 'salesforce':
         return salesforce_proxy_request(url, key, source_id)
+
+    if integration_type == 'jira':
+        return jira_proxy_request(url, key, source_id)
