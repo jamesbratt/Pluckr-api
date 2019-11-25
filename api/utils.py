@@ -51,13 +51,13 @@ def clone_chart(chart_id, request, is_published, tokens):
             cloned_dataset = DataSet(
                 name = dataset.name,
                 chart = cloned_chart,
-                data_source = cloned_datasource,
+                # data_source = cloned_datasource,
                 y_axis_enabled = dataset.y_axis_enabled,
                 y_axis_is_opposite = dataset.y_axis_is_opposite,
                 y_axis_title = dataset.y_axis_title,
                 y_axis_id = dataset.y_axis_id,
                 color = dataset.color,
-                data = '[]',
+                data = dataset.data,
                 user = request.user,
             )
             cloned_dataset.save()

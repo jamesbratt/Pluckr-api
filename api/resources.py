@@ -183,7 +183,7 @@ class DataSourceResource(ModelResource):
 class DataSetResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
-    data_source = fields.ForeignKey(DataSourceResource, 'data_source', full=True)
+    sources = fields.ToManyField(DataSourceResource, 'sources')
     class Meta:
         queryset = DataSet.objects.all()
         resource_name = 'dataset'
@@ -192,7 +192,6 @@ class DataSetResource(ModelResource):
         authorization = UserObjectsOnlyAuthorization()
         filtering = {
             'chart': ALL_WITH_RELATIONS,
-            'data_source': ALL_WITH_RELATIONS,
         }
 
     def hydrate(self, bundle):
@@ -201,10 +200,11 @@ class DataSetResource(ModelResource):
 
     def dehydrate(self, bundle):
         del bundle.data['user']
+        del bundle.data['sources']
         bundle.data['chart'] = bundle.obj.chart_id
-        bundle.data['data_source_name'] = bundle.data['data_source'].data['name']
-        bundle.data['provider'] = bundle.data['data_source'].data['provider']
-        bundle.data['data_source'] = bundle.obj.data_source_id
+        sources = bundle.obj.sources.all()
+
+        bundle.data['data_sources'] = list(sources.values('id', 'name', 'provider'))
         return bundle
 
 class OperationResource(ModelResource):
