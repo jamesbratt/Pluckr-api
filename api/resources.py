@@ -182,8 +182,8 @@ class DataSourceResource(ModelResource):
 
 class DataSetResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
-    chart = fields.ForeignKey(ChartResource, 'chart')
-    sources = fields.ToManyField(DataSourceResource, 'sources')
+    chart = fields.ForeignKey(ChartResource, 'chart', full=True)
+    sources = fields.ToManyField(DataSourceResource, 'sources', full=True)
     class Meta:
         queryset = DataSet.objects.all()
         resource_name = 'dataset'
@@ -200,16 +200,11 @@ class DataSetResource(ModelResource):
 
     def dehydrate(self, bundle):
         del bundle.data['user']
-        del bundle.data['sources']
-        bundle.data['chart'] = bundle.obj.chart_id
-        sources = bundle.obj.sources.all()
-
-        bundle.data['data_sources'] = list(sources.values('id', 'name', 'provider'))
         return bundle
 
 class OperationResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
-    dataset = fields.ForeignKey(DataSetResource, 'dataset')
+    dataset = fields.ForeignKey(DataSetResource, 'dataset', full=True)
     class Meta:
         queryset = Operation.objects.all()
         resource_name = 'operation'
@@ -228,7 +223,6 @@ class OperationResource(ModelResource):
 
     def dehydrate(self, bundle):
         del bundle.data['user']
-        bundle.data['dataset'] = bundle.obj.dataset_id
         return bundle
 
 class SignupResource(ModelResource):
@@ -278,13 +272,13 @@ class SignupResource(ModelResource):
 
         raw_password = bundle.data.pop('raw_password')
 
-        try: 
+        try:
             validate_password(raw_password)
         except exceptions.ValidationError as error:
             raise CustomBadRequest(
                 code="password_validation_error",
                 message=str(error.messages[0]))
-  
+
         bundle.data["password"] = make_password(raw_password)
         return super(SignupResource, self).obj_create(bundle, **kwargs)
 
