@@ -1,11 +1,13 @@
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 
 def clone_chart(chart_id, request, is_published, tokens):
-    # Get the chart
+
     chart_to_clone = Chart.objects.get(pk=chart_id)
 
-    # Get all its datasources
     datasources_tobe_cloned = chart_to_clone.datasource_set.all()
+    datasets_tobe_cloned = chart_to_clone.dataset_set.all()
+
+    datasource_mapper = {}
 
     # Check that we have a token for every datasource to be cloned
     if tokens is not None:
@@ -27,6 +29,7 @@ def clone_chart(chart_id, request, is_published, tokens):
     cloned_chart.save()
 
     for datasource in datasources_tobe_cloned:
+
         # For every data source create a clone
         integration = None
         if tokens is not None:
@@ -44,36 +47,41 @@ def clone_chart(chart_id, request, is_published, tokens):
         )
         cloned_datasource.save()
 
-        # For every data source find its datasets
-        datasets_tobe_cloned = datasource.dataset_set.all()
-        for dataset in datasets_tobe_cloned:
-            # Clone each dataset
-            cloned_dataset = DataSet(
-                name = dataset.name,
-                chart = cloned_chart,
-                # data_source = cloned_datasource,
-                y_axis_enabled = dataset.y_axis_enabled,
-                y_axis_is_opposite = dataset.y_axis_is_opposite,
-                y_axis_title = dataset.y_axis_title,
-                y_axis_id = dataset.y_axis_id,
-                color = dataset.color,
-                data = dataset.data,
-                user = request.user,
-            )
+        datasource_mapper[datasource.pk] = cloned_datasource
+
+    for dataset in datasets_tobe_cloned:
+
+        # Clone each dataset
+        cloned_dataset = DataSet(
+            name = dataset.name,
+            chart = cloned_chart,
+            y_axis_enabled = dataset.y_axis_enabled,
+            y_axis_is_opposite = dataset.y_axis_is_opposite,
+            y_axis_title = dataset.y_axis_title,
+            y_axis_id = dataset.y_axis_id,
+            color = dataset.color,
+            data = dataset.data,
+            user = request.user,
+        )
+        cloned_dataset.save()
+
+        for source in dataset.sources.all():
+            cloned_dataset.sources.add(datasource_mapper[source.pk])
             cloned_dataset.save()
 
-            # For every dataset find its operations
-            operations_tobe_cloned = dataset.operation_set.all()
-            for operation in operations_tobe_cloned:
-                # Clone each operation
-                cloned_operation = Operation(
-                    name = operation.name,
-                    dataset = cloned_dataset,
-                    root_function = operation.root_function,
-                    ast = operation.ast,
-                    sort_order = operation.sort_order,
-                    user = request.user,
-                )
-                cloned_operation.save()
+        # For every dataset find its operations
+        operations_tobe_cloned = dataset.operation_set.all()
+        for operation in operations_tobe_cloned:
+
+            # Clone each operation
+            cloned_operation = Operation(
+                name = operation.name,
+                dataset = cloned_dataset,
+                root_function = operation.root_function,
+                ast = operation.ast,
+                sort_order = operation.sort_order,
+                user = request.user,
+            )
+            cloned_operation.save()
 
     return cloned_chart
