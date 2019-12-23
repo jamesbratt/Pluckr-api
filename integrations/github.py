@@ -34,11 +34,15 @@ def github_request(url, originalUrl, token, responses = [], page=1):
     if response.status_code != 200:
         raise ValueError(response.json())
     if page > REQUEST_LIMIT:
-        raise ValueError('Too many page requests required, try making your request more specific by applying parameters')
+        return responses + response.json()
     if len(response.json()) == PAGE_LIMIT:
         return github_request(generate_url(originalUrl, [('page', str(page + 1))]), originalUrl, token, responses + response.json(), page + 1)
     else:
-        return responses + response.json()
+        json_response = response.json()
+        if isinstance(json_response, list):
+            return responses + response.json()
+        else:
+            return json_response
 
 def github_proxy_request(url, key, source_id):
     if key is not None:
@@ -52,4 +56,3 @@ def github_proxy_request(url, key, source_id):
 
     finalUrl = generate_url(url, [('per_page', '100')])
     return github_request(finalUrl, finalUrl, integration.access_token)
-  
