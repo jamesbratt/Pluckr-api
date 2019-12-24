@@ -56,7 +56,6 @@ class DataSet(models.Model):
     y_axis_title = models.CharField(max_length=100, blank=True)
     y_axis_id = models.CharField(max_length=100, blank=True)
     color = models.CharField(max_length=100, blank=True)
-    data = JSONField(blank=True, null=True)
     sources = models.ManyToManyField(DataSource, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
