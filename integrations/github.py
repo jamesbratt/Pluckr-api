@@ -28,7 +28,7 @@ def github_authentication(payload):
         raise ValueError(response.json())
     return response.json()
 
-def github_request(url, originalUrl, token, responses = [], page=1):
+def github_request(url, token):
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
@@ -46,4 +46,4 @@ def github_proxy_request(url, key, source_id):
         raise ValueError('Unable to retrieve integration token')
 
     finalUrl = generate_url(url, [('per_page', '100')])
-    return github_request(finalUrl, finalUrl, integration.access_token)
+    return github_request(finalUrl, integration.access_token)
