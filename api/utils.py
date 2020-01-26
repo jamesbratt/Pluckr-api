@@ -1,5 +1,7 @@
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 
+NON_AUTH_PROVIDERS = ['financial modeling']
+
 def clone_chart(chart_id, request, is_published, tokens):
 
     chart_to_clone = Chart.objects.get(pk=chart_id)
@@ -12,7 +14,7 @@ def clone_chart(chart_id, request, is_published, tokens):
     # Check that we have a token for every datasource to be cloned
     if tokens is not None:
         for datasource in datasources_tobe_cloned:
-            if datasource.provider not in tokens:
+            if datasource.provider not in tokens and datasource.provider not in NON_AUTH_PROVIDERS:
                 raise ValueError('You appear to not be connected to the ' + datasource.provider + ' provider.')
 
     # Clone chart
@@ -32,7 +34,7 @@ def clone_chart(chart_id, request, is_published, tokens):
 
         # For every data source create a clone
         integration = None
-        if tokens is not None:
+        if tokens is not None and datasource.provider not in NON_AUTH_PROVIDERS:
             integration_key = tokens[datasource.provider]['key']
             integration = IntegrationAuth.objects.get(key=integration_key)
 

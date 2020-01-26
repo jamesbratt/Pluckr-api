@@ -159,7 +159,7 @@ class ChartLibraryResource(ModelResource):
 class DataSourceResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
-    integration_auth = fields.ForeignKey(IntegrationResource, 'integration_auth')
+    integration_auth = fields.ForeignKey(IntegrationResource, 'integration_auth', null=True, blank=True)
     class Meta:
         queryset = DataSource.objects.all()
         resource_name = 'datasource'

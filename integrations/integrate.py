@@ -7,6 +7,7 @@ from integrations.jira import jira_authentication, jira_proxy_request
 from integrations.facebook import facebook_authentication, facebook_proxy_request
 from integrations.salesforce import salesforce_authentication, salesforce_proxy_request
 from integrations.stripe import stripe_authentication, stripe_proxy_request
+from integrations.finance import finance_proxy_request
 from api.models import IntegrationAuth
 
 def integrate(integration_type, payload, request):
@@ -120,3 +121,6 @@ def integrateRequest(url, key, integration_type, source_id):
 
     if integration_type == 'stripe':
         return stripe_proxy_request(url, key, source_id)
+
+    if integration_type == 'finance':
+        return finance_proxy_request(url)
