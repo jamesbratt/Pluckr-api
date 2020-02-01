@@ -25,6 +25,7 @@ class Chart(models.Model):
     chart_type = models.CharField(max_length=100)
     series_type = models.CharField(max_length=100)
     background_color = models.CharField(max_length=100, blank=True)
+    font_color = models.CharField(max_length=100, null=True, blank=True)
     x_axis_title = models.CharField(max_length=100, blank=True)
     x_axis_enabled = models.BooleanField(default=True, blank=True)
     is_published = models.BooleanField(default=False, blank=True)
