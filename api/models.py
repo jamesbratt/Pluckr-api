@@ -27,6 +27,7 @@ class Chart(models.Model):
     background_color = models.CharField(max_length=100, blank=True)
     color = models.CharField(max_length=100, null=True, blank=True)
     x_axis_title = models.CharField(max_length=100, blank=True)
+    y_axis_title = models.CharField(max_length=100, blank=True)
     x_axis_enabled = models.BooleanField(default=True, blank=True)
     is_published = models.BooleanField(default=False, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
