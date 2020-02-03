@@ -23,6 +23,7 @@ def clone_chart(chart_id, request, is_published, tokens):
         chart_type = chart_to_clone.chart_type,
         series_type = chart_to_clone.series_type,
         background_color = chart_to_clone.background_color,
+        y_axis_title = chart_to_clone.y_axis_title,
         x_axis_title = chart_to_clone.x_axis_title,
         x_axis_enabled = chart_to_clone.x_axis_enabled,
         is_published = is_published,
