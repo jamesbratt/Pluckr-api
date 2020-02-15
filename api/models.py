@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    can_be_contacted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
+
 class Workspace(models.Model):
     title = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -75,6 +82,9 @@ class Operation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
+def add_to_mailing_list(sender, instance, **kwargs):
+    print('Added to mailing list')
+
 def signals_import():
     """ A note on signals.
     The signals need to be imported early on so that they get registered
@@ -86,5 +96,6 @@ def signals_import():
     from tastypie.models import create_api_key
 
     models.signals.post_save.connect(create_api_key, sender=User)
+    models.signals.post_save.connect(add_to_mailing_list, sender=Profile)
 
 signals_import()

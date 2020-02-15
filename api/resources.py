@@ -14,7 +14,7 @@ from tastypie.http import HttpUnauthorized, HttpForbidden, HttpBadRequest
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
-from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth
+from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth, Profile
 from .utils import clone_chart
 from integrations.integrate import integrate, integrateRequest
 
@@ -242,7 +242,15 @@ class SignupResource(ModelResource):
         return bundle
 
     def obj_create(self, bundle, **kwargs):
-        REQUIRED_USER_FIELDS = ("username", "raw_password")
+        REQUIRED_USER_FIELDS = ("username", "raw_password", "contact")
+        username = bundle.data["username"]
+
+        if bundle.data["contact"] is False:
+            raise CustomBadRequest(
+                code="contact_confirmation",
+                message="Please agree to be contacted by Pluckr."
+            )
+
         for field in REQUIRED_USER_FIELDS:
             if field not in bundle.data:
                 raise CustomBadRequest(
@@ -250,7 +258,6 @@ class SignupResource(ModelResource):
                     message="Must provide {missing_key} when creating a user."
                     .format(missing_key=field))
         try:
-            username = bundle.data["username"]
             email_regex = re.compile(r"^.+@(\[?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?)$")
 
             if not email_regex.match(username):
@@ -279,8 +286,15 @@ class SignupResource(ModelResource):
                 code="password_validation_error",
                 message=str(error.messages[0]))
 
-        bundle.data["password"] = make_password(raw_password)
-        return super(SignupResource, self).obj_create(bundle, **kwargs)
+        bundle.obj = User.objects.create_user(username=username, password=raw_password)
+        bundle.obj.save()
+
+        Profile.objects.create(
+            user=bundle.obj,
+            can_be_contacted=True,
+        )
+
+        return bundle
 
 class AuthenticationResource(Resource):
 
