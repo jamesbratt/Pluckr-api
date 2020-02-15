@@ -24,6 +24,7 @@ def clone_chart(chart_id, request, is_published, tokens):
         series_type = chart_to_clone.series_type,
         background_color = chart_to_clone.background_color,
         color = chart_to_clone.color,
+        color_range = chart_to_clone.color_range,
         y_axis_title = chart_to_clone.y_axis_title,
         x_axis_title = chart_to_clone.x_axis_title,
         x_axis_enabled = chart_to_clone.x_axis_enabled,
@@ -64,7 +65,6 @@ def clone_chart(chart_id, request, is_published, tokens):
             y_axis_title = dataset.y_axis_title,
             y_axis_id = dataset.y_axis_id,
             color = dataset.color,
-            color_range = dataset.color_range,
             user = request.user,
         )
         cloned_dataset.save()
