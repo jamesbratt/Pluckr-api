@@ -1,6 +1,9 @@
+import requests, json
+from requests.auth import HTTPBasicAuth
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
+from django.conf import settings
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -83,7 +86,20 @@ class Operation(models.Model):
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
 def add_to_mailing_list(sender, instance, **kwargs):
-    print('Added to mailing list')
+    if settings.DEBUG is False:
+        api_key = settings.MAILCHIMP_API_KEY
+        username = settings.MAILCHIMP_USERNAME
+        list_id = settings.MAILCHIMP_LIST_ID
+        headers = {'Content-Type': 'application/json'}
+        try:
+            requests.post(
+                'https://us4.api.mailchimp.com/3.0/lists/' + list_id,
+                headers=headers,
+                data=json.dumps({'members': [{'email_address':instance.user.username, 'status':'subscribed'}]}),
+                auth=HTTPBasicAuth(username, api_key)
+            )
+        except Exception:
+            pass
 
 def signals_import():
     """ A note on signals.
