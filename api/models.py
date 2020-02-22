@@ -26,6 +26,7 @@ class IntegrationAuth(models.Model):
     refresh_token = models.TextField(blank=True)
     site_id = models.TextField(default=None, blank=True, null=True)
     host = models.TextField(null=True, blank=True)
+    tenantId = models.TextField(null=True, blank=True)
     expiry = models.IntegerField(blank=True) # Seconds till expirt of access_token
     req_date = models.DateTimeField('date requested', blank=True) # The date and time that the access_token was requested
     user = models.ForeignKey(User, on_delete=models.CASCADE)

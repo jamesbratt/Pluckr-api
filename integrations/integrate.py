@@ -140,6 +140,7 @@ def integrate(integration_type, payload, request):
                 integration_type=integration_type,
                 refresh_token=auth_response['refresh_token'],
                 key=auth_key.decode("utf-8"),
+                tenantId=auth_response['tenantId'],
                 access_token=auth_response['access_token'],
                 expiry=expires_in,
                 req_date=req_date,

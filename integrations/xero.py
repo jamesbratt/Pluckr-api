@@ -23,7 +23,20 @@ def xero_authentication(payload):
     response = requests.post(XERO_TOKEN_URL, data=payload, headers=headers)
     if response.status_code != 200:
         raise ValueError(response.json())
-    return response.json()
+
+    json_response = response.json()
+
+    tenant_headers = {
+        "Accept":"application/json",
+        "Authorization": "Bearer " + json_response['access_token'],
+    }
+    tenant_request = requests.get('https://api.xero.com/connections', headers=tenant_headers)
+    if tenant_request.status_code != 200:
+        raise ValueError(tenant_request.json())
+
+    tenant_id = tenant_request.json()[0]['tenantId']
+    json_response['tenantId'] = tenant_id
+    return json_response
 
 def xero_refresh(refresh_token):
     auth_header = settings.XERO_CLIENT_ID + ":" + settings.XERO_CLIENT_SECRET
@@ -42,8 +55,12 @@ def xero_refresh(refresh_token):
         raise ValueError(response.json())
     return response.json()
 
-def xero_request(url, token):
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
+def xero_request(url, token, tenant_id):
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'Xero-tenant-id': tenant_id,
+    }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         raise ValueError(response.json())
@@ -69,5 +86,5 @@ def xero_proxy_request(url, key, source_id):
         integration.access_token = refresh_token_response['access_token']
         integration.req_date = new_req_date
         integration.save()
-        return xero_request(url, refresh_token_response['access_token'])
-    return xero_request(url, integration.access_token)
+        return xero_request(url, refresh_token_response['access_token'], integration.tenantId)
+    return xero_request(url, integration.access_token, integration.tenantId)
