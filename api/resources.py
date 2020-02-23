@@ -18,6 +18,22 @@ from .models import Chart, DataSource, DataSet, Operation, Workspace, Integratio
 from .utils import clone_chart
 from integrations.integrate import integrate, integrateRequest
 
+class UserAccountAuthorization(Authorization):
+    def read_list(self, object_list, bundle):
+        return object_list.filter(id=bundle.request.user.id)
+
+    def read_detail(self, object_list, bundle):
+        return bundle.obj.id == bundle.request.user.id
+
+    def update_detail(self, object_list, bundle):
+        return bundle.obj.id == bundle.request.user.id
+
+    def delete_list(self, object_list, bundle):
+        return bundle.obj.id == bundle.request.user.id
+
+    def delete_detail(self, object_list, bundle):
+        return bundle.obj.id == bundle.request.user.id
+
 class UserObjectsOnlyAuthorization(Authorization):
     def read_list(self, object_list, bundle):
         # This assumes a ``QuerySet`` from ``ModelResource``.
@@ -55,7 +71,7 @@ class UserResource(ModelResource):
         queryset = User.objects.all()
         resource_name = 'user'
         authentication = ApiKeyAuthentication()
-        authorization = Authorization()
+        authorization = UserAccountAuthorization()
 
 class IntegrationResource(ModelResource):
     class Meta:
