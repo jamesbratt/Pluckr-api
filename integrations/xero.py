@@ -77,7 +77,7 @@ def xero_proxy_request(url, key, source_id):
         raise ValueError('Unable to retrieve integration token')
 
     expiry_date = integration.req_date + datetime.timedelta(seconds=integration.expiry)
-    if expiry_date < datetime.datetime.now(timezone.utc):
+    if expiry_date > datetime.datetime.now(timezone.utc):
 
         # Get a new access token cause this ones expired
         refresh_token_response = xero_refresh(integration.refresh_token)
