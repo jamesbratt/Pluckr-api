@@ -337,7 +337,8 @@ class AuthenticationResource(Resource):
             if user.is_active:
                 return self.create_response(request, {
                     'api_key': self.__get_api_key_for_user(user),
-                    'username': username
+                    'username': username,
+                    'id': user.id
                     })
             else:
                 return self.create_response(request, {
