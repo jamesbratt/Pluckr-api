@@ -49,6 +49,20 @@ class Chart(models.Model):
     def __str__(self):
         return str(self.name)
 
+class Dashboard(models.Model):
+    name = models.CharField(max_length=100)
+    charts = models.ManyToManyField(Chart, through='DashboardMember', blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.name)
+
+class DashboardMember(models.Model):
+    dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE)
+    chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
+    order = models.IntegerField()
+
 class DataSource(models.Model):
     name = models.CharField(max_length=100)
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
