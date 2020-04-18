@@ -136,7 +136,6 @@ class DashboardResource(ModelResource):
         return bundle
 
 class DashboardMembersResource(ModelResource):
-    user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
     dashboard = fields.ForeignKey(DashboardResource, 'dashboard')
     class Meta:
@@ -144,18 +143,10 @@ class DashboardMembersResource(ModelResource):
         resource_name = 'members'
         always_return_data = True
         authentication = ApiKeyAuthentication()
-        authorization = UserObjectsOnlyAuthorization()
+        authorization = Authorization()
         filtering = {
             'dashboard': ALL_WITH_RELATIONS,
         }
-
-    def hydrate(self, bundle):
-        bundle.obj.user = bundle.request.user
-        return bundle
-
-    def dehydrate(self, bundle):
-        del bundle.data['user']
-        return bundle
 
 class ChartLibraryResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
