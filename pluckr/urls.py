@@ -16,7 +16,7 @@ Including another URLconf
 # urls.py
 from django.conf.urls import url, include
 from tastypie.api import Api
-from api.resources import UserResource, ChartResource, ChartLibraryResource, DataSourceResource, DataSetResource, OperationResource, AuthenticationResource, SignupResource, IntegrationAuthResource, IntegrationRequestResource, DashboardResource
+from api.resources import DashboardMembersResource, UserResource, ChartResource, ChartLibraryResource, DataSourceResource, DataSetResource, OperationResource, AuthenticationResource, SignupResource, IntegrationAuthResource, IntegrationRequestResource, DashboardResource
 
 v1_api = Api(api_name='v1')
 v1_api.register(ChartResource())
@@ -30,6 +30,7 @@ v1_api.register(IntegrationRequestResource())
 v1_api.register(ChartLibraryResource())
 v1_api.register(UserResource())
 v1_api.register(DashboardResource())
+v1_api.register(DashboardMembersResource())
 
 urlpatterns = [
     url(r'^api/', include(v1_api.urls)),

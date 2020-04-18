@@ -14,7 +14,7 @@ from tastypie.http import HttpUnauthorized, HttpForbidden, HttpBadRequest
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.utils import trailing_slash
 from .exceptions import CustomBadRequest
-from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth, Profile, Dashboard
+from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth, Profile, Dashboard, DashboardMember
 from .utils import clone_chart
 from integrations.integrate import integrate, integrateRequest
 
@@ -126,6 +126,28 @@ class DashboardResource(ModelResource):
 
     def save_m2m(self, bundle):
         return bundle
+
+    def hydrate(self, bundle):
+        bundle.obj.user = bundle.request.user
+        return bundle
+
+    def dehydrate(self, bundle):
+        del bundle.data['user']
+        return bundle
+
+class DashboardMembersResource(ModelResource):
+    user = fields.ForeignKey(UserResource, 'user')
+    chart = fields.ForeignKey(ChartResource, 'chart')
+    dashboard = fields.ForeignKey(DashboardResource, 'dashboard')
+    class Meta:
+        queryset = DashboardMember.objects.all()
+        resource_name = 'members'
+        always_return_data = True
+        authentication = ApiKeyAuthentication()
+        authorization = UserObjectsOnlyAuthorization()
+        filtering = {
+            'dashboard': ALL_WITH_RELATIONS,
+        }
 
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
