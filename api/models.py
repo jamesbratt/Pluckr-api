@@ -61,7 +61,7 @@ class Dashboard(models.Model):
 class DashboardMember(models.Model):
     dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE)
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
-    order = models.IntegerField()
+    order = models.IntegerField(null=True, blank=True)
 
 class DataSource(models.Model):
     name = models.CharField(max_length=100)
