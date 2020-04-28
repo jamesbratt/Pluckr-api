@@ -116,7 +116,7 @@ class ChartResource(ModelResource):
 
 class DashboardResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
-    charts = fields.ToManyField(ChartResource, full=True, null=True, blank=True, attribute=lambda bundle: bundle.obj.charts.all())
+    charts = fields.ToManyField('api.resources.DashboardMembersResource', full=True, null=True, blank=True, attribute=lambda bundle: bundle.obj.dashboardmember_set.all())
     class Meta:
         queryset = Dashboard.objects.all()
         resource_name = 'dashboard'
@@ -136,7 +136,7 @@ class DashboardResource(ModelResource):
         return bundle
 
 class DashboardMembersResource(ModelResource):
-    chart = fields.ToOneField(ChartResource, 'chart')
+    chart = fields.ToOneField(ChartResource, 'chart', full=True)
     dashboard = fields.ToOneField(DashboardResource, 'dashboard')
     class Meta:
         queryset = DashboardMember.objects.all()
