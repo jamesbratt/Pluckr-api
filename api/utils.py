@@ -1,6 +1,6 @@
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 
-NON_AUTH_PROVIDERS = ['financial modeling']
+NON_AUTH_PROVIDERS = ['stock market']
 
 def clone_chart(chart_id, request, is_published, tokens):
 
