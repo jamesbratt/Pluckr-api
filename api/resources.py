@@ -156,6 +156,10 @@ class ChartLibraryResource(ModelResource):
         always_return_data = True
         authentication = ApiKeyAuthentication()
 
+    def dehydrate(self, bundle):
+        bundle.data['publisher'] = bundle.obj.user.username
+        return bundle
+
     def prepend_urls(self):
         return [
             url(r"^(?P<resource_name>%s)/publish%s$" %
