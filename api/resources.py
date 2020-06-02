@@ -292,7 +292,7 @@ class SignupResource(ModelResource):
         return bundle
 
     def obj_create(self, bundle, **kwargs):
-        REQUIRED_USER_FIELDS = ("username", "raw_password", "contact")
+        REQUIRED_USER_FIELDS = ("username", "raw_password", "email_address", "contact")
         username = bundle.data["username"]
 
         if bundle.data["contact"] is False:
@@ -308,22 +308,22 @@ class SignupResource(ModelResource):
                     message="Must provide {missing_key} when creating a user."
                     .format(missing_key=field))
         try:
-            email_regex = re.compile(r"^.+@(\[?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?)$")
-
-            if not email_regex.match(username):
-                raise CustomBadRequest(
-                    code="invalid_email",
-                    message="The email address submitted is invalid.")
-
             if User.objects.filter(username=username):
                 raise CustomBadRequest(
                     code="duplicate_exception",
                     message="That username is already taken.")
+
+            if Profile.objects.filter(email_address=bundle.data["email_address"]):
+                raise CustomBadRequest(
+                    code="duplicate_exception",
+                    message="That email address is already taken.")
+
         except KeyError as missing_key:
             raise CustomBadRequest(
                 code="missing_key",
                 message="Must provide {missing_key} when creating a user."
                 .format(missing_key=missing_key))
+
         except User.DoesNotExist:
             pass
 
@@ -341,6 +341,7 @@ class SignupResource(ModelResource):
 
         Profile.objects.create(
             user=bundle.obj,
+            email_address=bundle.data["email_address"],
             can_be_contacted=True,
         )
 

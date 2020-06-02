@@ -8,6 +8,7 @@ from django.conf import settings
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     can_be_contacted = models.BooleanField(default=False)
+    email_address = models.EmailField(unique=True, default=None, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -107,15 +108,17 @@ def add_to_mailing_list(sender, instance, **kwargs):
         username = settings.MAILCHIMP_USERNAME
         list_id = settings.MAILCHIMP_LIST_ID
         headers = {'Content-Type': 'application/json'}
+
         try:
             requests.post(
                 'https://us4.api.mailchimp.com/3.0/lists/' + list_id,
                 headers=headers,
-                data=json.dumps({'members': [{'email_address':instance.user.username, 'status':'subscribed'}]}),
+                data=json.dumps({'members': [{'email_address':instance.user.profile.email_address, 'status':'subscribed'}]}),
                 auth=HTTPBasicAuth(username, api_key)
             )
         except Exception:
             pass
+
 
 def signals_import():
     """ A note on signals.
