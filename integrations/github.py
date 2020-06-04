@@ -1,3 +1,4 @@
+import time
 from datetime import timezone
 import datetime
 import requests
@@ -28,10 +29,13 @@ def github_authentication(payload):
         raise ValueError(response.json())
     return response.json()
 
-def github_request(url, token):
+def github_request(url, token, retry = True):
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
+        if retry is True:
+            time.sleep(1)
+            return github_request(url, token, False)
         raise ValueError(response.json())
     return response.json()
 

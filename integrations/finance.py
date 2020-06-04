@@ -1,3 +1,4 @@
+import time
 import requests
 from django.conf import settings
 
@@ -16,6 +17,7 @@ def finance_proxy_request(url, retry = True):
     response = requests.get(url_with_token, headers=headers)
     if response.status_code != 200:
         if retry is True:
+            time.sleep(1)
             return finance_proxy_request(url, False)
         raise ValueError(response.json())
     return response.json()
