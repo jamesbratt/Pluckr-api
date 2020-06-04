@@ -10,17 +10,12 @@ def generate_url(endpoint, params):
         url += str(symbol + param_key + '=' + param)
     return url
 
-def finance_proxy_request(url):
-
-    retry = True
-
+def finance_proxy_request(url, retry = True):
     headers = {'Content-Type': 'application/json'}
     url_with_token = generate_url(url, [('token', settings.STOCK_MARKET_API_KEY)])
     response = requests.get(url_with_token, headers=headers)
     if response.status_code != 200:
         if retry is True:
-            retry = False
-            return finance_proxy_request(url)
-        else:
-            raise ValueError(response.json())
+            return finance_proxy_request(url, False)
+        raise ValueError(response.json())
     return response.json()
