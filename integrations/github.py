@@ -34,7 +34,7 @@ def github_request(url, token, retry = True):
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         if retry is True:
-            time.sleep(1)
+            time.sleep(2)
             return github_request(url, token, False)
         raise ValueError(response.json())
     return response.json()
