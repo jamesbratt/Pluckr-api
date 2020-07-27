@@ -2,6 +2,7 @@
 Data Provider
 """
 from django.db import models
+from django.contrib.auth.models import User
 from api.models import IntegrationAuth, Workspace
 
 class Provider(models.Model):
@@ -16,4 +17,5 @@ class Provider(models.Model):
     api_key = models.TextField(blank=True, null=True)
     connection = models.OneToOneField(
         IntegrationAuth, blank=True, null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
