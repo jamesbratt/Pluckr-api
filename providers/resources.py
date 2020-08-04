@@ -1,21 +1,54 @@
 """
 Providers API
 """
-import requests
 import json
+import requests
 from tastypie.resources import ModelResource
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie import fields
 
+from django.views.generic import View
+from django.http import HttpResponse, HttpResponseRedirect
+
 from api.resources import UserObjectsOnlyAuthorization, UserResource
 
 from .models import Provider
+from .utils import generate_url, Swagger
+
+class OauthLoginRedirect(View):
+    """ Redirect to an integrations authorization page """
+
+    def get(self, request, **kwargs):
+        """ Get the redirect url """
+        provider = Provider.objects.get(pk=self.kwargs['pk'])
+
+        params = [
+            ('client_id', provider.client_id),
+            ('redirect_uri', 'http://localhost:8000/providers/authorize/' + str(provider.id) + '/'),
+            ('response_type', 'code'),
+            ('scope', ','.join(provider.scopes))
+        ]
+
+        try:
+            swagger_url = provider.swagger_url
+            security_definition = Swagger(swagger_url).extract_security_definition()
+        except ValueError as err:
+            resp = err.args[0]
+            status_code = 400
+            response = HttpResponse(json.dumps(resp))
+            response.status_code = status_code
+            return response
+
+        endpoint = security_definition['authorizationUrl']
+        url = generate_url(endpoint, params)
+        return HttpResponseRedirect(url)
 
 class ProviderResource(ModelResource):
-    user = fields.ForeignKey(UserResource, 'user')
     """
     Provider API resource
     """
+
+    user = fields.ForeignKey(UserResource, 'user')
     class Meta:
         """ Resource meta """
         queryset = Provider.objects.all()
@@ -26,13 +59,11 @@ class ProviderResource(ModelResource):
 
     def alter_detail_data_to_serialize(self, request, data):
         swagger_url = data.obj.swagger_url
-        response = requests.get(swagger_url)
-        if response.status_code != 200:
-            raise ValueError(response.json())
-
-        swagger_definition = response.json()
-        key = list(swagger_definition['securityDefinitions'])[0]
-        data.data['swagger_definition'] = json.loads(json.dumps(swagger_definition['securityDefinitions'][key]))
+        data.data['swagger_definition'] = json.loads(
+            json.dumps(
+                Swagger(swagger_url).extract_security_definition()
+            )
+        )
         return data
 
     def hydrate(self, bundle):

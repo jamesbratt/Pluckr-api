@@ -3,6 +3,7 @@ Data Provider
 """
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import JSONField
 from api.models import IntegrationAuth, Workspace
 
 class Provider(models.Model):
@@ -13,6 +14,7 @@ class Provider(models.Model):
     swagger_url = models.TextField(blank=True, null=True)
     client_id = models.TextField(blank=True, null=True)
     client_secret = models.TextField(blank=True, null=True)
+    scopes = JSONField(blank=True, null=True, default=None)
     username = models.CharField(blank=True, null=True, max_length=100)
     api_key = models.TextField(blank=True, null=True)
     connection = models.OneToOneField(

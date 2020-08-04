@@ -13,8 +13,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 # urls.py
 from django.conf.urls import url, include
+from django.urls import path
 from tastypie.api import Api
 from providers.resources import ProviderResource
 from api.resources import DashboardMembersResource, UserResource, ChartResource, ChartLibraryResource, DataSourceResource, DataSetResource, OperationResource, AuthenticationResource, SignupResource, IntegrationAuthResource, IntegrationRequestResource, DashboardResource
@@ -36,4 +38,5 @@ v1_api.register(DashboardMembersResource())
 
 urlpatterns = [
     url(r'^api/', include(v1_api.urls)),
+    path('providers/', include('providers.urls')),
 ]
