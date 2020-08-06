@@ -8,14 +8,36 @@ from tastypie.authentication import ApiKeyAuthentication
 from tastypie import fields
 
 from django.views.generic import View
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 
 from api.resources import UserObjectsOnlyAuthorization, UserResource
 
 from .models import Provider
-from .utils import generate_url, Swagger
+from .utils import generate_url, Swagger, V2OpenApiSpecConnection
 
-class OauthLoginRedirect(View):
+class ProviderAuthenticate(View):
+    """ Authenticate with the provider """
+
+    def get(self, request, **kwargs):
+        """ GET """
+        provider = get_object_or_404(Provider, pk=self.kwargs['pk'])
+
+        try:
+            swagger_url = provider.swagger_url
+            security_definition = Swagger(swagger_url).extract_security_definition()
+        except ValueError as err:
+            resp = err.args[0]
+            status_code = 400
+            response = HttpResponse(json.dumps(resp))
+            response.status_code = status_code
+            return response
+
+        V2OpenApiSpecConnection(request, security_definition).invoke_auth_flow()
+
+        return HttpResponse("hello")
+
+class ProviderConnect(View):
     """ Redirect to an integrations authorization page """
 
     def get(self, request, **kwargs):

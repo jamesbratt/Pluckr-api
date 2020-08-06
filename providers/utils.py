@@ -12,6 +12,33 @@ def generate_url(endpoint, params):
         url += str(symbol + param_key + '=' + param)
     return url
 
+class Connection:
+    """ Establishing a connection with a provider """
+
+    v2_auth_types = ["basic", "apiKey", "oauth2"]
+
+    def __init__(self, request, security_definition):
+        self.request = request
+        self.security_definition = security_definition
+        self.spec_version = security_definition["swagger"]
+
+class V2OpenApiSpecConnection(Connection):
+    v2_auth_types = ["basic", "apiKey", "oauth2"]
+
+    def invoke_auth_flow(self):
+        definition_type = self.security_definition["type"]
+
+        if definition_type == "basic":
+            return
+
+        if definition_type == "apiKey":
+            return
+
+        if definition_type == "oauth2":
+            return
+
+        return self
+
 class Swagger:
     """ Interacting with Swagger """
 
