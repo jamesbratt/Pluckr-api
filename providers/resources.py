@@ -26,6 +26,12 @@ class ProviderAuthenticate(View):
         try:
             swagger_url = provider.swagger_url
             security_definition = Swagger(swagger_url).extract_security_definition()
+            V2OpenApiSpecConnection(
+                request,
+                security_definition,
+                provider
+            ).invoke_auth_flow()
+
         except ValueError as err:
             resp = err.args[0]
             status_code = 400
@@ -33,9 +39,7 @@ class ProviderAuthenticate(View):
             response.status_code = status_code
             return response
 
-        V2OpenApiSpecConnection(request, security_definition).invoke_auth_flow()
-
-        return HttpResponse("hello")
+        return HttpResponseRedirect("http://localhost:3000")
 
 class ProviderConnect(View):
     """ Redirect to an integrations authorization page """
