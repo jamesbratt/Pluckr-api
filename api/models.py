@@ -67,11 +67,16 @@ class DashboardMember(models.Model):
 class DataSource(models.Model):
     name = models.CharField(max_length=100)
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE)
+
+    """ Used to reference legacy built-in data providers """
     provider = models.CharField(max_length=100)
     resource = models.CharField(max_length=100)
     params = JSONField(blank=True, null=True)
     pages = models.IntegerField(blank=True, null=True, default=0)
     integration_auth = models.ForeignKey(IntegrationAuth, on_delete=models.CASCADE, null=True, blank=True)
+
+    """ Used to associate new custom data providers """
+    data_provider = models.ForeignKey("providers.Provider", on_delete=models.CASCADE, null=True, blank=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 

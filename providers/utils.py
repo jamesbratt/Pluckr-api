@@ -12,7 +12,7 @@ def generate_url(endpoint, params):
     url = endpoint
     for i, (param_key, param) in enumerate(params):
         symbol = '&'
-        if i is 0:
+        if i == 0:
             symbol = '?'
         url += str(symbol + param_key + '=' + param)
     return url
@@ -23,7 +23,7 @@ class Connection:
     def __init__(self, request, security_definition, provider):
         self.request = request
         self.security_definition = security_definition
-        self.spec_version = security_definition["swagger"]
+        # self.spec_version = security_definition["swagger"]
         self.provider = provider
 
     def create_connection(self, auth_response):
@@ -39,10 +39,11 @@ class Connection:
             access_token=auth_response['access_token'],
             expiry=expires_in,
             req_date=req_date,
-            user=self.request.user,
+            user=self.provider.user,
         )
         integration_creds.save()
-        self.provider.update(connection=integration_creds)
+        self.provider.connection = integration_creds
+        self.provider.save()
 
     def fetch_oauth_token(self, token_url, code):
         """ Making an http request for an oauth token """
@@ -51,7 +52,7 @@ class Connection:
             'client_id': self.provider.client_id,
             'client_secret': self.provider.client_secret,
             'code': code,
-            'redirect_uri': 'http://localhost:8000/providers/authorize/' + str(self.provider.id) + '/')
+            'redirect_uri': 'http://localhost:8000/providers/authorize/' + str(self.provider.id) + '/'
         }
 
         response = requests.post(token_url, data=payload, headers={"Accept":"application/json"})
@@ -74,7 +75,7 @@ class Connection:
     def invoke_access_code_flow(self):
         """ Handling the access code flow """
 
-        code = self.request.GET("code", None)
+        code = self.request.GET['code']
         token_url = self.security_definition["tokenUrl"]
 
         if code is None:
@@ -101,22 +102,22 @@ class V2OpenApiSpecConnection(Connection):
         definition_type = self.security_definition["type"]
         definition_flow = self.security_definition["flow"]
 
-        if definition_type is None and definition_type is "oauth2":
+        if definition_type is None or definition_type != "oauth2":
             raise ValueError("The security definition type is not recognised")
 
-        if definition_flow is None and definition_flow in self.v2_auth_flows:
+        if definition_flow is None or definition_flow not in self.v2_auth_flows:
             raise ValueError("The security definition flow is not recognised")
        
-        if definition_type == self.implict_flow:
+        if definition_flow == self.implict_flow:
             self.invoke_implicit_flow()
 
-        if definition_type == self.password_flow:
+        if definition_flow == self.password_flow:
             self.invoke_password_flow()
 
-        if definition_type == self.application_flow:
+        if definition_flow == self.application_flow:
             self.invoke_application_flow()
 
-        if definition_type == self.access_code_flow:
+        if definition_flow == self.access_code_flow:
             auth_response = self.invoke_access_code_flow()
             self.create_connection(auth_response)
 
@@ -139,3 +140,21 @@ class Swagger:
         """ Return the security defintion only """
         key = list(self.definition['securityDefinitions'])[0]
         return self.definition['securityDefinitions'][key]
+
+    def extract_paths(self):
+        """ Return the paths only """
+        return self.definition['paths']
+
+    def extract_parameters(self):
+        """ Return the parameters only """
+        if self.definition.__contains__("parameters"):
+            return self.definition['parameters']
+        return None
+
+    def extract_host(self):
+        """ Return the host only """
+        return self.definition['host']
+
+    def extract_base_path(self):
+        """ Return the base path only """
+        return self.definition['basePath']

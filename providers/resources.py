@@ -50,7 +50,7 @@ class ProviderConnect(View):
 
         params = [
             ('client_id', provider.client_id),
-            ('redirect_uri', 'http://localhost:8000/providers/authorize/' + str(provider.id) + '/'),
+            ('redirect_uri', 'http://localhost:8000/providers/authenticate/' + str(provider.id) + '/'),
             ('response_type', 'code'),
             ('scope', ','.join(provider.scopes))
         ]
@@ -83,13 +83,33 @@ class ProviderResource(ModelResource):
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
 
-    def alter_detail_data_to_serialize(self, request, data):
-        swagger_url = data.obj.swagger_url
-        data.data['swagger_definition'] = json.loads(
-            json.dumps(
-                Swagger(swagger_url).extract_security_definition()
+    def alter_list_data_to_serialize(self, request, data):
+
+        for obj in data['objects']:
+            swagger_url = obj.data["swagger_url"]
+            swagger_instance = Swagger(swagger_url)
+            obj.data["swagger_definition"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_security_definition()
+                )
             )
-        )
+
+            obj.data["swagger_paths"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_paths()
+                )
+            )
+
+            obj.data["swagger_parameters"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_parameters()
+                )
+            )
+
+            obj.data["swagger_host"] = swagger_instance.extract_host()
+
+            obj.data["swagger_base_path"] = swagger_instance.extract_base_path()
+
         return data
 
     def hydrate(self, bundle):
@@ -97,5 +117,9 @@ class ProviderResource(ModelResource):
         return bundle
 
     def dehydrate(self, bundle):
-        del bundle.data['user']
+        del bundle.data["user"]
+        if bundle.obj.connection is not None:
+            bundle.data["isConnected"] = True
+        else:
+            bundle.data["isConnected"] = False
         return bundle
