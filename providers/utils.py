@@ -6,6 +6,7 @@ import requests
 from cryptography.fernet import Fernet
 
 from api.models import IntegrationAuth
+from .models import Provider
 
 def generate_url(endpoint, params):
     """ Building the oauth authorisation url """
@@ -17,13 +18,67 @@ def generate_url(endpoint, params):
         url += str(symbol + param_key + '=' + param)
     return url
 
+class ProxyRequest:
+    """ Proxying requests faciliated by connected providers """
+
+    def __init__(self, request, uri, provider_id, source_id, security_definition):
+        self.request = request
+        self.uri = uri
+        self.provider_id = provider_id
+        self.source_id = source_id
+        self.security_definition = security_definition
+
+        try:
+            self.provider = Provider.objects.get(pk=self.provider_id)
+        except Provider.DoesNotExist:
+            raise ValueError("A provider could not be found with the ID " + self.provider_id)
+
+    def should_refresh(self, connection):
+        """ Determine whether to use the refresh token """
+
+        expiry_date = connection.req_date + datetime.timedelta(seconds=connection.expiry)
+        if expiry_date < datetime.datetime.now(timezone.utc):
+            return True
+        return False
+
+    def get_token(self):
+        """ Get the appropriate token based on the provider """
+
+        connection = self.provider.connection
+        definition_type = self.security_definition["type"]
+
+        if connection is None and definition_type != "oauth2":
+            raise ValueError("Authentication mechanisms other than oauth2 are not yet fully supported")
+
+        if connection is None:
+            raise ValueError("A connection has not been established with " + self.provider.name)
+
+        if self.should_refresh(connection):
+            connection = Connection(
+                self.request,
+                self.security_definition,
+                self.provider
+            ).update_oauth_access_token()
+        
+        return connection.access_token
+
+    def proxy_request(self):
+        """ Make the http request """
+
+        token = self.get_token()
+
+        headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
+        response = requests.get(self.uri, headers=headers)
+        if response.status_code != 200:
+            raise ValueError(response.json())
+        return response.json()
+
 class Connection:
     """ Establishing a connection with a provider """
 
     def __init__(self, request, security_definition, provider):
         self.request = request
         self.security_definition = security_definition
-        # self.spec_version = security_definition["swagger"]
         self.provider = provider
 
     def create_connection(self, auth_response):
@@ -59,6 +114,32 @@ class Connection:
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
+
+    def update_oauth_access_token(self):
+        """ Making an http request for an oauth refresh token """
+
+        token_url = self.security_definition["tokenUrl"]
+        connection = self.provider.connection
+
+        payload = {
+            'client_id': self.provider.client_id,
+            'client_secret': self.provider.client_secret,
+            'grant_type': 'refresh_token',
+            'refresh_token': connection.refresh_token
+        }
+
+        response = requests.post(token_url, data=payload, headers={"Accept":"application/json"})
+        if response.status_code != 200:
+            raise ValueError(response.json())
+
+        refresh_token_response = response.json()
+
+        """ Now update the connection entity with the new access token """
+        new_req_date = datetime.datetime.now(timezone.utc)
+        connection.access_token = refresh_token_response['access_token']
+        connection.req_date = new_req_date
+        connection.save()
+        return connection
 
     def invoke_password_flow(self):
         """ Handling the password flow """
