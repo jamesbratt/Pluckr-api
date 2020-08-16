@@ -68,7 +68,7 @@ class ProxyRequest:
         token = self.get_token()
 
         headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
-        response = requests.get(self.uri, headers=headers)
+        response = requests.get("https://" + self.uri, headers=headers)
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
@@ -135,6 +135,7 @@ class Connection:
         refresh_token_response = response.json()
 
         """ Now update the connection entity with the new access token """
+        
         new_req_date = datetime.datetime.now(timezone.utc)
         connection.access_token = refresh_token_response['access_token']
         connection.req_date = new_req_date

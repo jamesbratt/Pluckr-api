@@ -17,6 +17,8 @@ from .exceptions import CustomBadRequest
 from .models import Chart, DataSource, DataSet, Operation, Workspace, IntegrationAuth, Profile, Dashboard, DashboardMember
 from .utils import clone_chart
 from integrations.integrate import integrate, integrateRequest
+from providers.utils import ProxyRequest
+# from providers.resources import ProviderResource
 
 class UserAccountAuthorization(Authorization):
     def read_list(self, object_list, bundle):
@@ -214,6 +216,8 @@ class DataSourceResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
     chart = fields.ForeignKey(ChartResource, 'chart')
     integration_auth = fields.ForeignKey(IntegrationResource, 'integration_auth', null=True, blank=True)
+    data_provider = fields.ForeignKey("providers.resources.ProviderResource", 'data_provider', null=True, blank=True)
+
     class Meta:
         queryset = DataSource.objects.all()
         resource_name = 'datasource'
@@ -232,6 +236,7 @@ class DataSourceResource(ModelResource):
         del bundle.data['user']
         bundle.data['chart'] = bundle.obj.chart_id
         bundle.data['integration_auth'] = bundle.obj.integration_auth_id
+        bundle.data['data_provider_id'] = bundle.obj.data_provider_id
         return bundle
 
 class DataSetResource(ModelResource):
@@ -424,9 +429,11 @@ class IntegrationRequestResource(Resource):
         integration_key = data.get('key', None)
         integration_type = data.get('integration_type', None)
         source_id = data.get('source_id', None)
+        swagger_definition = data.get('swagger_definition', None)
 
         try:
-            response = integrateRequest(integration_url, integration_key, integration_type, source_id)
+            # response = integrateRequest(integration_url, integration_key, integration_type, source_id)
+            response = ProxyRequest(request, integration_url, integration_key, source_id, swagger_definition).proxy_request()
         except ValueError as error:
             raise CustomBadRequest(
                 code="integration_proxy_error",
