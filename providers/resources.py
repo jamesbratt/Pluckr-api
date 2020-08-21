@@ -2,10 +2,12 @@
 Providers API
 """
 import json
-import requests
 from tastypie.resources import ModelResource
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie import fields
+from tastypie.http import HttpBadRequest
+from tastypie.validation import Validation
+from tastypie.exceptions import ImmediateHttpResponse
 
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
@@ -69,11 +71,23 @@ class ProviderConnect(View):
         url = generate_url(endpoint, params)
         return HttpResponseRedirect(url)
 
+class AwesomeValidation(Validation):
+    def is_valid(self, bundle, request=None):
+
+        errors = {}
+
+        for key, value in bundle.data.items():
+
+            if not 'awesome' in value:
+                errors[key] = ['NOT ENOUGH AWESOME. NEEDS MORE.']
+
+        return errors
+
 class ProviderResource(ModelResource):
     """
     Provider API resource
     """
-
+    swagger_instance = None
     user = fields.ForeignKey(UserResource, 'user')
     class Meta:
         """ Resource meta """
@@ -83,6 +97,23 @@ class ProviderResource(ModelResource):
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
 
+    def check_is_valid_definition(self, swagger_url):
+        self.swagger_instance = Swagger(swagger_url)
+
+    def obj_create(self, bundle, **kwargs):
+        try:
+            self.check_is_valid_definition(bundle.data["swagger_url"])
+        except ValueError:
+            raise ImmediateHttpResponse(HttpBadRequest("Invalid Swagger Definition"))
+        return super(ProviderResource, self).obj_create(bundle, **kwargs)
+
+    def obj_update(self, bundle, **kwargs):
+        try:
+            self.check_is_valid_definition(bundle.data["swagger_url"])
+        except ValueError:
+            raise ImmediateHttpResponse(HttpBadRequest("Invalid Swagger Definition"))
+        return super(ProviderResource, self).obj_update(bundle, **kwargs)
+
     def hydrate(self, bundle):
         bundle.obj.user = bundle.request.user
         return bundle
@@ -91,28 +122,35 @@ class ProviderResource(ModelResource):
         del bundle.data["user"]
 
         swagger_url = bundle.data["swagger_url"]
-        swagger_instance = Swagger(swagger_url)
-        bundle.data["swagger_definition"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_security_definition()
+
+        if self.swagger_instance is None:
+            try:
+                self.swagger_instance = Swagger(swagger_url)
+            except ValueError:
+                pass
+
+        if self.swagger_instance is not None:
+            bundle.data["swagger_definition"] = json.loads(
+                json.dumps(
+                    self.swagger_instance.extract_security_definition()
+                )
             )
-        )
 
-        bundle.data["swagger_paths"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_paths()
+            bundle.data["swagger_paths"] = json.loads(
+                json.dumps(
+                    self.swagger_instance.extract_paths()
+                )
             )
-        )
 
-        bundle.data["swagger_parameters"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_parameters()
+            bundle.data["swagger_parameters"] = json.loads(
+                json.dumps(
+                    self.swagger_instance.extract_parameters()
+                )
             )
-        )
 
-        bundle.data["swagger_host"] = swagger_instance.extract_host()
+            bundle.data["swagger_host"] = self.swagger_instance.extract_host()
 
-        bundle.data["swagger_base_path"] = swagger_instance.extract_base_path()
+            bundle.data["swagger_base_path"] = self.swagger_instance.extract_base_path()
 
         if bundle.obj.connection is not None:
             bundle.data["isConnected"] = True
