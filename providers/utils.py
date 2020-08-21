@@ -59,7 +59,7 @@ class ProxyRequest:
                 self.security_definition,
                 self.provider
             ).update_oauth_access_token()
-        
+
         return connection.access_token
 
     def proxy_request(self):
@@ -135,7 +135,7 @@ class Connection:
         refresh_token_response = response.json()
 
         """ Now update the connection entity with the new access token """
-        
+
         new_req_date = datetime.datetime.now(timezone.utc)
         connection.access_token = refresh_token_response['access_token']
         connection.req_date = new_req_date
@@ -189,7 +189,7 @@ class V2OpenApiSpecConnection(Connection):
 
         if definition_flow is None or definition_flow not in self.v2_auth_flows:
             raise ValueError("The security definition flow is not recognised")
-       
+
         if definition_flow == self.implict_flow:
             self.invoke_implicit_flow()
 
@@ -203,12 +203,22 @@ class V2OpenApiSpecConnection(Connection):
             auth_response = self.invoke_access_code_flow()
             self.create_connection(auth_response)
 
+VERSION_2 = "VERSION_2"
+VERSION_3 = "VERSION_3"
+
 class Swagger:
     """ Interacting with Swagger """
 
     def __init__(self, swagger_url):
         self.swagger_url = swagger_url
         self.definition = self.fetch_definition()
+        self.version = self.set_version()
+
+    def set_version(self):
+        if "swagger" in self.definition:
+            return VERSION_2
+        if "openapi" in self.definition:
+            return VERSION_3
 
     def fetch_definition(self):
         """ Making an HTTP request for a swagger definition """
@@ -220,8 +230,21 @@ class Swagger:
 
     def extract_security_definition(self):
         """ Return the security defintion only """
-        key = list(self.definition['securityDefinitions'])[0]
-        return self.definition['securityDefinitions'][key]
+
+        if self.version == VERSION_2:
+            key = list(self.definition['securityDefinitions'])[0]
+            return self.definition['securityDefinitions'][key]
+
+        if self.version == VERSION_3:
+            key = list(self.definition['components']['securitySchemas'])[0]
+            scheme = self.definition['components']['securitySchemas'][key]
+            scheme_key = list(scheme['flows'])[0]
+            scheme['flow'] = scheme_key
+            scheme_root = scheme
+            nested_flow_scheme = scheme['flows'][scheme_key]
+            merged = {**scheme_root, **nested_flow_scheme}
+            del merged['flows']
+            return merged
 
     def extract_paths(self):
         """ Return the paths only """
@@ -235,8 +258,14 @@ class Swagger:
 
     def extract_host(self):
         """ Return the host only """
-        return self.definition['host']
+        if self.version == VERSION_2:
+            return self.definition['host']
+
+        if self.version == VERSION_3:
+            return self.definition['servers'][0]['url']
 
     def extract_base_path(self):
         """ Return the base path only """
-        return self.definition['basePath']
+        if self.version == VERSION_2:
+            return self.definition['basePath']
+        return None
