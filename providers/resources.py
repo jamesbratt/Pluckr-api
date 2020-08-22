@@ -87,7 +87,6 @@ class ProviderResource(ModelResource):
     """
     Provider API resource
     """
-    swagger_instance = None
     user = fields.ForeignKey(UserResource, 'user')
     class Meta:
         """ Resource meta """
@@ -98,7 +97,7 @@ class ProviderResource(ModelResource):
         authorization = UserObjectsOnlyAuthorization()
 
     def check_is_valid_definition(self, swagger_url):
-        self.swagger_instance = Swagger(swagger_url)
+        Swagger(swagger_url)
 
     def obj_create(self, bundle, **kwargs):
         try:
@@ -122,35 +121,29 @@ class ProviderResource(ModelResource):
         del bundle.data["user"]
 
         swagger_url = bundle.data["swagger_url"]
+        swagger_instance = Swagger(swagger_url)
 
-        if self.swagger_instance is None:
-            try:
-                self.swagger_instance = Swagger(swagger_url)
-            except ValueError:
-                pass
-
-        if self.swagger_instance is not None:
-            bundle.data["swagger_definition"] = json.loads(
-                json.dumps(
-                    self.swagger_instance.extract_security_definition()
-                )
+        bundle.data["swagger_definition"] = json.loads(
+            json.dumps(
+                swagger_instance.extract_security_definition()
             )
+        )
 
-            bundle.data["swagger_paths"] = json.loads(
-                json.dumps(
-                    self.swagger_instance.extract_paths()
-                )
+        bundle.data["swagger_paths"] = json.loads(
+            json.dumps(
+                swagger_instance.extract_paths()
             )
+        )
 
-            bundle.data["swagger_parameters"] = json.loads(
-                json.dumps(
-                    self.swagger_instance.extract_parameters()
-                )
+        bundle.data["swagger_parameters"] = json.loads(
+            json.dumps(
+                swagger_instance.extract_parameters()
             )
+        )
 
-            bundle.data["swagger_host"] = self.swagger_instance.extract_host()
+        bundle.data["swagger_host"] = swagger_instance.extract_host()
 
-            bundle.data["swagger_base_path"] = self.swagger_instance.extract_base_path()
+        bundle.data["swagger_base_path"] = swagger_instance.extract_base_path()
 
         if bundle.obj.connection is not None:
             bundle.data["isConnected"] = True
