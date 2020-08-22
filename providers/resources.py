@@ -16,7 +16,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from api.resources import UserObjectsOnlyAuthorization, UserResource
 
 from .models import Provider
-from .utils import generate_url, Swagger, V2OpenApiSpecConnection
+from .utils import generate_url, Swagger, V2OpenApiSpecConnection, V3OpenApiSpecConnection, VERSION_2, VERSION_3
 
 class ProviderAuthenticate(View):
     """ Authenticate with the provider """
@@ -27,12 +27,23 @@ class ProviderAuthenticate(View):
 
         try:
             swagger_url = provider.swagger_url
-            security_definition = Swagger(swagger_url).extract_security_definition()
-            V2OpenApiSpecConnection(
-                request,
-                security_definition,
-                provider
-            ).invoke_auth_flow()
+            swagger = Swagger(swagger_url)
+            swagger_version = swagger.version
+            security_definition = swagger.extract_security_definition()
+
+            if swagger_version == VERSION_2:
+                V2OpenApiSpecConnection(
+                    request,
+                    security_definition,
+                    provider
+                ).invoke_auth_flow()
+
+            if swagger_version == VERSION_3:
+                V3OpenApiSpecConnection(
+                    request,
+                    security_definition,
+                    provider
+                ).invoke_auth_flow()
 
         except ValueError as err:
             resp = err.args[0]
@@ -70,18 +81,6 @@ class ProviderConnect(View):
         endpoint = security_definition['authorizationUrl']
         url = generate_url(endpoint, params)
         return HttpResponseRedirect(url)
-
-class AwesomeValidation(Validation):
-    def is_valid(self, bundle, request=None):
-
-        errors = {}
-
-        for key, value in bundle.data.items():
-
-            if not 'awesome' in value:
-                errors[key] = ['NOT ENOUGH AWESOME. NEEDS MORE.']
-
-        return errors
 
 class ProviderResource(ModelResource):
     """

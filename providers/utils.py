@@ -35,10 +35,11 @@ class ProxyRequest:
 
     def should_refresh(self, connection):
         """ Determine whether to use the refresh token """
-
-        expiry_date = connection.req_date + datetime.timedelta(seconds=connection.expiry)
-        if expiry_date < datetime.datetime.now(timezone.utc):
-            return True
+        if expiry_date is not None:
+            expiry_date = connection.req_date + datetime.timedelta(seconds=connection.expiry)
+            if expiry_date < datetime.datetime.now(timezone.utc):
+                return True
+            return False
         return False
 
     def get_token(self):
@@ -200,6 +201,41 @@ class V2OpenApiSpecConnection(Connection):
             self.invoke_application_flow()
 
         if definition_flow == self.access_code_flow:
+            auth_response = self.invoke_access_code_flow()
+            self.create_connection(auth_response)
+
+class V3OpenApiSpecConnection(Connection):
+    """ Connecting to an api with a v2 defintion """
+
+    implict_flow = "implicit"
+    password_flow = "password"
+    client_credentials_flow = "clientCredentials"
+    auth_code_flow = "authorizationCode"
+
+    v3_auth_flows = [implict_flow, password_flow, client_credentials_flow, auth_code_flow]
+
+    def invoke_auth_flow(self):
+        """ Determine how to handle the connection """
+
+        definition_type = self.security_definition["type"]
+        definition_flow = self.security_definition["flow"]
+
+        if definition_type is None or definition_type != "oauth2":
+            raise ValueError("The security definition type is not recognised")
+
+        if definition_flow is None or definition_flow not in self.v3_auth_flows:
+            raise ValueError("The security definition flow is not recognised")
+
+        if definition_flow == self.implict_flow:
+            self.invoke_implicit_flow()
+
+        if definition_flow == self.password_flow:
+            self.invoke_password_flow()
+
+        if definition_flow == self.client_credentials_flow:
+            self.invoke_application_flow()
+
+        if definition_flow == self.auth_code_flow:
             auth_response = self.invoke_access_code_flow()
             self.create_connection(auth_response)
 
