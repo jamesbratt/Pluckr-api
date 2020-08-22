@@ -77,6 +77,14 @@ class DataSource(models.Model):
 
     """ Used to associate new custom data providers """
     data_provider = models.ForeignKey("providers.Provider", on_delete=models.CASCADE, null=True, blank=True, default=None)
+
+    """
+    When publishing templates we do not want to clone
+    a datasources associated provider but we still need to
+    reference it in order to surface information about the api
+    back to any user who wishes to install it
+    """
+    swagger_url = models.TextField(blank=True, null=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 

@@ -160,6 +160,12 @@ class ChartLibraryResource(ModelResource):
 
     def dehydrate(self, bundle):
         bundle.data['publisher'] = bundle.obj.user.username
+
+        providers = []
+        for datasource in bundle.obj.datasource_set.all():
+            providers.append({ 'id': datasource.id, 'name': datasource.name, 'definition_url': datasource.swagger_url })
+
+        bundle.data['providers'] = providers
         return bundle
 
     def prepend_urls(self):

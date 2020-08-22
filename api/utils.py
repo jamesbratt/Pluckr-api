@@ -1,4 +1,5 @@
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
+from providers.models import Provider
 
 NON_AUTH_PROVIDERS = ['stock market']
 
@@ -35,21 +36,16 @@ def clone_chart(chart_id, request, is_published, tokens):
 
     for datasource in datasources_tobe_cloned:
 
-        # For every data source create a clone
-        integration = None
-        if tokens is not None and datasource.provider not in NON_AUTH_PROVIDERS:
-            integration_key = tokens[datasource.provider]['key']
-            integration = IntegrationAuth.objects.get(key=integration_key)
-
         cloned_datasource = DataSource(
             name = datasource.name,
             chart = cloned_chart,
-            provider = datasource.provider,
+            provider = '',
             resource = datasource.resource,
             params = datasource.params,
-            integration_auth = integration,
+            swagger_url = datasource.data_provider.swagger_url,
             user = request.user,
         )
+
         cloned_datasource.save()
 
         datasource_mapper[datasource.pk] = cloned_datasource
