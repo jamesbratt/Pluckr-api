@@ -288,6 +288,10 @@ class Swagger:
         """ Return the paths only """
         return self.definition['paths']
 
+    def extract_info(self):
+        """ Return the paths only """
+        return self.definition['info']
+
     def extract_parameters(self):
         """ Return the parameters only """
         if self.version == VERSION_2:

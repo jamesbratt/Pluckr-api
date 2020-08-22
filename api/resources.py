@@ -163,7 +163,7 @@ class ChartLibraryResource(ModelResource):
 
         providers = []
         for datasource in bundle.obj.datasource_set.all():
-            providers.append({ 'id': datasource.id, 'name': datasource.name, 'definition_url': datasource.swagger_url })
+            providers.append({ 'id': datasource.id, 'name': datasource.name, 'swagger_info': datasource.swagger_info })
 
         bundle.data['providers'] = providers
         return bundle

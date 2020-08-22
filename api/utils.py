@@ -1,5 +1,6 @@
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 from providers.models import Provider
+from providers.utils import Swagger
 
 NON_AUTH_PROVIDERS = ['stock market']
 
@@ -36,13 +37,16 @@ def clone_chart(chart_id, request, is_published, tokens):
 
     for datasource in datasources_tobe_cloned:
 
+        swagger_url = datasource.data_provider.swagger_url
+        swagger_info = Swagger(swagger_url).extract_info()
+
         cloned_datasource = DataSource(
             name = datasource.name,
             chart = cloned_chart,
             provider = '',
             resource = datasource.resource,
             params = datasource.params,
-            swagger_url = datasource.data_provider.swagger_url,
+            swagger_info = swagger_info,
             user = request.user,
         )
 

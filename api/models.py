@@ -84,7 +84,7 @@ class DataSource(models.Model):
     reference it in order to surface information about the api
     back to any user who wishes to install it
     """
-    swagger_url = JSONField(blank=True, null=True, default=None)
+    swagger_info = JSONField(blank=True, null=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
 
