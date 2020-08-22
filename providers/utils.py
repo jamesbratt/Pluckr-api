@@ -35,7 +35,7 @@ class ProxyRequest:
 
     def should_refresh(self, connection):
         """ Determine whether to use the refresh token """
-        if expiry_date is not None:
+        if connection.expiry != 0:
             expiry_date = connection.req_date + datetime.timedelta(seconds=connection.expiry)
             if expiry_date < datetime.datetime.now(timezone.utc):
                 return True
@@ -69,7 +69,7 @@ class ProxyRequest:
         token = self.get_token()
 
         headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
-        response = requests.get("https://" + self.uri, headers=headers)
+        response = requests.get(self.uri, headers=headers)
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
@@ -85,18 +85,20 @@ class Connection:
     def create_connection(self, auth_response):
         """ Create an integration object and link it to the provider """
 
-        expires_in = auth_response['expires_in']
+        expires_in = auth_response['expires_in'] if 'expires_in' in auth_response else 0
         req_date = datetime.datetime.now(timezone.utc)
         auth_key = Fernet.generate_key()
         integration_creds = IntegrationAuth(
             integration_type=self.provider.name,
-            refresh_token=auth_response['refresh_token'],
             key=auth_key.decode("utf-8"),
             access_token=auth_response['access_token'],
             expiry=expires_in,
             req_date=req_date,
             user=self.provider.user,
         )
+        if 'refresh_token' in auth_response:
+            integration_creds.refresh_token = auth_response['refresh_token']
+
         integration_creds.save()
         self.provider.connection = integration_creds
         self.provider.save()
@@ -108,7 +110,7 @@ class Connection:
             'client_id': self.provider.client_id,
             'client_secret': self.provider.client_secret,
             'code': code,
-            'redirect_uri': 'http://localhost:8000/providers/authorize/' + str(self.provider.id) + '/'
+            'redirect_uri': 'http://localhost:8000/providers/authenticate/' + str(self.provider.id) + '/'
         }
 
         response = requests.post(token_url, data=payload, headers={"Accept":"application/json"})
@@ -288,14 +290,20 @@ class Swagger:
 
     def extract_parameters(self):
         """ Return the parameters only """
-        if self.definition.__contains__("parameters"):
-            return self.definition['parameters']
-        return None
+        if self.version == VERSION_2:
+            if self.definition.__contains__("parameters"):
+                return self.definition['parameters']
+            return None
+
+        if self.version == VERSION_3:
+            if self.definition['components'].__contains__("parameters"):
+                return self.definition['components']['parameters']
+            return None
 
     def extract_host(self):
         """ Return the host only """
         if self.version == VERSION_2:
-            return self.definition['host']
+            return self.definition['schemes'][0] + '://' + self.definition['host']
 
         if self.version == VERSION_3:
             return self.definition['servers'][0]['url']
