@@ -202,10 +202,10 @@ class ChartLibraryResource(ModelResource):
         self.is_authenticated(request)
         data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         chart_id = data.get('chart_id', '')
-        tokens = data.get('tokens', '')
+        source_providers = data.get('sourceProviders', None)
 
         try:
-            cloned_chart = clone_chart(chart_id, request, False, tokens)
+            cloned_chart = clone_chart(chart_id, request, False, source_providers)
         except ValueError as error:
             raise CustomBadRequest(
                 code="installation_error",

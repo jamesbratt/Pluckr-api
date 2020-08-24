@@ -1,23 +1,22 @@
+from django.core.exceptions import ObjectDoesNotExist
 from .models import Chart, DataSource, DataSet, Operation, IntegrationAuth
 from providers.models import Provider
 from providers.utils import Swagger
 
 NON_AUTH_PROVIDERS = ['stock market']
 
-def clone_chart(chart_id, request, is_published, tokens):
+def clone_chart(chart_id, request, is_published, source_providers):
 
     chart_to_clone = Chart.objects.get(pk=chart_id)
 
     datasources_tobe_cloned = chart_to_clone.datasource_set.all()
     datasets_tobe_cloned = chart_to_clone.dataset_set.all()
 
-    datasource_mapper = {}
+    if source_providers is not None:
+        if source_providers.__len__() != datasets_tobe_cloned.__len__():
+            raise ValueError("You must select a data provider for every data source.")
 
-    # Check that we have a token for every datasource to be cloned
-    if tokens is not None:
-        for datasource in datasources_tobe_cloned:
-            if datasource.provider not in tokens and datasource.provider not in NON_AUTH_PROVIDERS:
-                raise ValueError('You appear to not be connected to the ' + datasource.provider + ' provider.')
+    datasource_mapper = {}
 
     # Clone chart
     cloned_chart = Chart(
@@ -37,18 +36,33 @@ def clone_chart(chart_id, request, is_published, tokens):
 
     for datasource in datasources_tobe_cloned:
 
-        swagger_url = datasource.data_provider.swagger_url
-        swagger_info = Swagger(swagger_url).extract_info()
+        swagger_info = datasource.swagger_info
+        if is_published is True:
+            swagger_url = datasource.data_provider.swagger_url
+            swagger_info = Swagger(swagger_url).extract_info()
 
         cloned_datasource = DataSource(
-            name = datasource.name,
-            chart = cloned_chart,
-            provider = '',
-            resource = datasource.resource,
-            params = datasource.params,
-            swagger_info = swagger_info,
-            user = request.user,
+            name=datasource.name,
+            chart=cloned_chart,
+            provider='',
+            resource=datasource.resource,
+            params=datasource.params,
+            swagger_info=swagger_info,
+            user=request.user,
         )
+
+        if source_providers is not None and is_published is False:
+            provider_id = source_providers[str(datasource.id)]
+
+            try:
+                provider = Provider.objects.get(pk=provider_id)
+                cloned_datasource.data_provider = provider
+            except ObjectDoesNotExist:
+                cloned_chart.delete()
+                raise ValueError(
+                    "The data provider that you have chosen to connect to the data source titled "
+                    + datasource.name + " does not exist."
+                )
 
         cloned_datasource.save()
 
