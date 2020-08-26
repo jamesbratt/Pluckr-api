@@ -247,8 +247,9 @@ VERSION_3 = "VERSION_3"
 class Swagger:
     """ Interacting with Swagger """
 
-    def __init__(self, swagger_url):
+    def __init__(self, swagger_url, security_scheme=None):
         self.swagger_url = swagger_url
+        self.security_scheme = security_scheme
         self.definition = self.fetch_definition()
         self.version = self.set_version()
 
@@ -270,23 +271,35 @@ class Swagger:
         """ Return the security defintion only """
 
         if self.version == VERSION_2:
-            key = list(self.definition['securityDefinitions'])[0]
+            key = self.security_scheme if self.security_scheme is not None else list(self.definition['securityDefinitions'])[0]
             return self.definition['securityDefinitions'][key]
 
         if self.version == VERSION_3:
-            key = list(self.definition['components']['securitySchemas'])[0]
-            scheme = self.definition['components']['securitySchemas'][key]
-            scheme_key = list(scheme['flows'])[0]
-            scheme['flow'] = scheme_key
-            scheme_root = scheme
-            nested_flow_scheme = scheme['flows'][scheme_key]
-            merged = {**scheme_root, **nested_flow_scheme}
-            del merged['flows']
-            return merged
+            key = self.security_scheme if self.security_scheme is not None else list(self.definition['components']['securitySchemes'])[0]
+            scheme = self.definition['components']['securitySchemes'][key]
+            
+            if "flows" in scheme:
+                scheme_key = list(scheme['flows'])[0]
+                scheme['flow'] = scheme_key
+                scheme_root = scheme
+                nested_flow_scheme = scheme['flows'][scheme_key]
+                merged = {**scheme_root, **nested_flow_scheme}
+                del merged['flows']
+                return merged
+            else:
+                return scheme
 
     def extract_paths(self):
         """ Return the paths only """
         return self.definition['paths']
+
+    def extract_security_options(self):
+        """ Return the available security options """
+        if self.version == VERSION_2:
+            return list(self.definition['securityDefinitions'])
+
+        if self.version == VERSION_3:
+            return list(self.definition['components']['securitySchemes'])
 
     def extract_info(self):
         """ Return the paths only """

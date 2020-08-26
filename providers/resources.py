@@ -2,6 +2,7 @@
 Providers API
 """
 import json
+import urllib
 from tastypie.resources import ModelResource
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie import fields
@@ -63,14 +64,15 @@ class ProviderConnect(View):
 
         params = [
             ('client_id', provider.client_id),
-            ('redirect_uri', 'http://localhost:8000/providers/authenticate/' + str(provider.id) + '/'),
+            ('redirect_uri', urllib.parse.quote('http://localhost:8000/providers/authenticate/' + str(provider.id) + '/')),
             ('response_type', 'code'),
-            ('scope', ','.join(provider.scopes))
+            ('scope', urllib.parse.quote(','.join(provider.scopes)))
         ]
 
         try:
             swagger_url = provider.swagger_url
-            security_definition = Swagger(swagger_url).extract_security_definition()
+            security_scheme = provider.security_scheme
+            security_definition = Swagger(swagger_url, security_scheme).extract_security_definition()
         except ValueError as err:
             resp = err.args[0]
             status_code = 400
@@ -120,7 +122,15 @@ class ProviderResource(ModelResource):
         del bundle.data["user"]
 
         swagger_url = bundle.data["swagger_url"]
-        swagger_instance = Swagger(swagger_url)
+        security_scheme = bundle.data["security_scheme"]
+
+        swagger_instance = Swagger(swagger_url, security_scheme)
+
+        bundle.data["security_options"] = json.loads(
+            json.dumps(
+                swagger_instance.extract_security_options()
+            )
+        )
 
         bundle.data["swagger_definition"] = json.loads(
             json.dumps(

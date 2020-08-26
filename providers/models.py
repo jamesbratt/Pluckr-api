@@ -12,6 +12,7 @@ class Provider(models.Model):
     """
     name = models.CharField(max_length=100)
     swagger_url = models.TextField(blank=True, null=True)
+    security_scheme = models.CharField(max_length=100, blank=True, null=True, default=None)
     client_id = models.TextField(blank=True, null=True)
     client_secret = models.TextField(blank=True, null=True)
     scopes = JSONField(blank=True, null=True, default=None)
