@@ -16,6 +16,9 @@ class Provider(models.Model):
     client_id = models.TextField(blank=True, null=True)
     client_secret = models.TextField(blank=True, null=True)
     scopes = JSONField(blank=True, null=True, default=None)
+    api_base_url_override = models.TextField(blank=True, null=True, default=None)
+    scope_extensions = models.TextField(blank=True, null=True, default=None)
+    parameter_extensions = JSONField(blank=True, null=True, default=None)
     username = models.CharField(blank=True, null=True, max_length=100)
     api_key = models.TextField(blank=True, null=True)
     connection = models.OneToOneField(

@@ -28,7 +28,8 @@ class ProviderAuthenticate(View):
 
         try:
             swagger_url = provider.swagger_url
-            swagger = Swagger(swagger_url)
+            security_scheme = provider.security_scheme
+            swagger = Swagger(swagger_url, security_scheme)
             swagger_version = swagger.version
             security_definition = swagger.extract_security_definition()
 
@@ -61,12 +62,13 @@ class ProviderConnect(View):
     def get(self, request, **kwargs):
         """ Get the redirect url """
         provider = Provider.objects.get(pk=self.kwargs['pk'])
-
+        stringified_scopes = ','.join(provider.scopes)
+        scopes = stringified_scopes + ',' + provider.scope_extensions if provider.scope_extensions is not None else stringified_scopes
         params = [
             ('client_id', provider.client_id),
             ('redirect_uri', urllib.parse.quote('http://localhost:8000/providers/authenticate/' + str(provider.id) + '/')),
             ('response_type', 'code'),
-            ('scope', urllib.parse.quote(','.join(provider.scopes)))
+            ('scope', urllib.parse.quote(scopes))
         ]
 
         try:
@@ -81,6 +83,13 @@ class ProviderConnect(View):
             return response
 
         endpoint = security_definition['authorizationUrl']
+        parameter_extensions = provider.parameter_extensions
+
+        if parameter_extensions is not None:
+            parameter_extensions_dict = json.loads(parameter_extensions)
+            for key in parameter_extensions_dict:
+                params.append((key, parameter_extensions_dict[key]))
+
         url = generate_url(endpoint, params)
         return HttpResponseRedirect(url)
 

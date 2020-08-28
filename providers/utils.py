@@ -110,6 +110,7 @@ class Connection:
             'client_id': self.provider.client_id,
             'client_secret': self.provider.client_secret,
             'code': code,
+            'grant_type': 'authorization_code',
             'redirect_uri': 'http://localhost:8000/providers/authenticate/' + str(self.provider.id) + '/'
         }
 
