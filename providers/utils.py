@@ -255,14 +255,35 @@ class Swagger:
         self.version = self.set_version()
 
     def set_version(self):
+
+        if 'paths' not in self.definition:
+            raise ValueError('There are no paths defined in your definition')
+        if 'info' not in self.definition:
+            raise ValueError('There is no info defined in your definition')
+
         if "swagger" in self.definition:
+            if 'securityDefinitions' not in self.definition:
+                raise ValueError('There are no security definitions defined in your definition')
+            if 'basePath' not in self.definition:
+                raise ValueError('There is no base path defined in your definition')
+            if 'schemes' not in self.definition:
+                raise ValueError('There are no schemes defined in your definition')
+
             return VERSION_2
+
         if "openapi" in self.definition:
+            if 'components' not in self.definition:
+                raise ValueError('There are no components defined in your definition')
+            if 'servers' not in self.definition:
+                raise ValueError('There are no servers defined in your definition')
+
             return VERSION_3
 
     def fetch_definition(self):
         """ Making an HTTP request for a swagger definition """
         response = requests.get(self.swagger_url)
+        if response.status_code == 404:
+            raise ValueError("The openAPI definition provided could not be found")
         if response.status_code != 200:
             raise ValueError(response.json())
 

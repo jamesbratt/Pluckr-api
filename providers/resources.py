@@ -62,8 +62,8 @@ class ProviderConnect(View):
     def get(self, request, **kwargs):
         """ Get the redirect url """
         provider = Provider.objects.get(pk=self.kwargs['pk'])
-        stringified_scopes = ','.join(provider.scopes)
-        scopes = stringified_scopes + ',' + provider.scope_extensions if provider.scope_extensions is not None else stringified_scopes
+        stringified_scopes = ' '.join(provider.scopes)
+        scopes = stringified_scopes + ' ' + provider.scope_extensions if provider.scope_extensions != '' else stringified_scopes
         params = [
             ('client_id', provider.client_id),
             ('redirect_uri', urllib.parse.quote('http://localhost:8000/providers/authenticate/' + str(provider.id) + '/')),
@@ -85,7 +85,7 @@ class ProviderConnect(View):
         endpoint = security_definition['authorizationUrl']
         parameter_extensions = provider.parameter_extensions
 
-        if parameter_extensions is not None:
+        if parameter_extensions != '':
             parameter_extensions_dict = json.loads(parameter_extensions)
             for key in parameter_extensions_dict:
                 params.append((key, parameter_extensions_dict[key]))
@@ -112,15 +112,15 @@ class ProviderResource(ModelResource):
     def obj_create(self, bundle, **kwargs):
         try:
             self.check_is_valid_definition(bundle.data["swagger_url"])
-        except ValueError:
-            raise ImmediateHttpResponse(HttpBadRequest("Invalid Swagger Definition"))
+        except ValueError as error:
+            raise ImmediateHttpResponse(HttpBadRequest(error))
         return super(ProviderResource, self).obj_create(bundle, **kwargs)
 
     def obj_update(self, bundle, **kwargs):
         try:
             self.check_is_valid_definition(bundle.data["swagger_url"])
-        except ValueError:
-            raise ImmediateHttpResponse(HttpBadRequest("Invalid Swagger Definition"))
+        except ValueError as error:
+            raise ImmediateHttpResponse(HttpBadRequest(error))
         return super(ProviderResource, self).obj_update(bundle, **kwargs)
 
     def hydrate(self, bundle):
@@ -130,38 +130,42 @@ class ProviderResource(ModelResource):
     def dehydrate(self, bundle):
         del bundle.data["user"]
 
-        swagger_url = bundle.data["swagger_url"]
-        security_scheme = bundle.data["security_scheme"]
+        try:
+            swagger_url = bundle.data["swagger_url"]
+            security_scheme = bundle.data["security_scheme"]
 
-        swagger_instance = Swagger(swagger_url, security_scheme)
+            swagger_instance = Swagger(swagger_url, security_scheme)
 
-        bundle.data["security_options"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_security_options()
+            bundle.data["security_options"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_security_options()
+                )
             )
-        )
 
-        bundle.data["swagger_definition"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_security_definition()
+            bundle.data["swagger_definition"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_security_definition()
+                )
             )
-        )
 
-        bundle.data["swagger_paths"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_paths()
+            bundle.data["swagger_paths"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_paths()
+                )
             )
-        )
 
-        bundle.data["swagger_parameters"] = json.loads(
-            json.dumps(
-                swagger_instance.extract_parameters()
+            bundle.data["swagger_parameters"] = json.loads(
+                json.dumps(
+                    swagger_instance.extract_parameters()
+                )
             )
-        )
 
-        bundle.data["swagger_host"] = swagger_instance.extract_host()
+            bundle.data["swagger_host"] = swagger_instance.extract_host()
 
-        bundle.data["swagger_base_path"] = swagger_instance.extract_base_path()
+            bundle.data["swagger_base_path"] = swagger_instance.extract_base_path()
+
+        except ValueError as error:
+            raise ImmediateHttpResponse(HttpBadRequest(error))
 
         if bundle.obj.connection is not None:
             bundle.data["isConnected"] = True
