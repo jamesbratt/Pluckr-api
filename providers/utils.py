@@ -254,6 +254,8 @@ class Swagger:
         self.definition = self.fetch_definition()
         self.version = self.set_version()
 
+        self.extract_security_definition()
+
     def set_version(self):
 
         if 'paths' not in self.definition:
@@ -301,7 +303,12 @@ class Swagger:
             scheme = self.definition['components']['securitySchemes'][key]
             
             if "flows" in scheme:
-                scheme_key = list(scheme['flows'])[0]
+                flow_schemes = list(scheme['flows'])
+                scheme_key = next((x for x in flow_schemes if x == 'authorizationCode'), None)
+
+                if scheme_key is None:
+                    raise ValueError("The only supported oauth2 flow is: authorizationCode")
+
                 scheme['flow'] = scheme_key
                 scheme_root = scheme
                 nested_flow_scheme = scheme['flows'][scheme_key]
