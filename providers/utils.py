@@ -46,10 +46,6 @@ class ProxyRequest:
         """ Get the appropriate token based on the provider """
 
         connection = self.provider.connection
-        definition_type = self.security_definition["type"]
-
-        if connection is None and definition_type != "oauth2":
-            raise ValueError("Authentication mechanisms other than oauth2 are not yet fully supported")
 
         if connection is None:
             raise ValueError("A connection has not been established with " + self.provider.name)
@@ -63,16 +59,47 @@ class ProxyRequest:
 
         return connection.access_token
 
-    def proxy_request(self):
-        """ Make the http request """
+    def proxy_api_key_request(self):
+        headers = {'Content-Type': 'application/json'}
 
+        url = self.uri
+        name = self.security_definition["name"]
+        token = self.provider.api_key
+
+        if self.security_definition["in"] == "header":
+            headers[name] = token
+
+        if self.security_definition["in"] == "query":
+            url = generate_url(self.uri, [(name, token)])
+
+        if self.security_definition["in"] == "cookie":
+            raise ValueError("API keys passed in a cookie is not yet supported")
+
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            raise ValueError(response.json())
+        return response.json()
+
+    def proxy_oauth2_request(self):
         token = self.get_token()
-
         headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
         response = requests.get(self.uri, headers=headers)
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
+
+    def proxy_request(self):
+        """ Make the http request """
+
+        auth_type = self.security_definition["type"]
+
+        if auth_type == "oauth2":
+            return self.proxy_oauth2_request()
+
+        if auth_type == "apiKey":
+            return self.proxy_api_key_request()
+
+        raise ValueError(auth_type + " is an unsupported authentication mechanism.")
 
 class Connection:
     """ Establishing a connection with a provider """
@@ -138,8 +165,7 @@ class Connection:
 
         refresh_token_response = response.json()
 
-        """ Now update the connection entity with the new access token """
-
+        # Now update the connection entity with the new access token
         new_req_date = datetime.datetime.now(timezone.utc)
         connection.access_token = refresh_token_response['access_token']
         connection.req_date = new_req_date

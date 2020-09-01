@@ -167,7 +167,7 @@ class ProviderResource(ModelResource):
         except ValueError as error:
             raise ImmediateHttpResponse(HttpBadRequest(error))
 
-        if bundle.obj.connection is not None:
+        if bundle.obj.connection is not None or bundle.obj.api_key:
             bundle.data["isConnected"] = True
         else:
             bundle.data["isConnected"] = False
