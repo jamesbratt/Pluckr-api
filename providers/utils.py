@@ -245,6 +245,9 @@ class V3OpenApiSpecConnection(Connection):
 VERSION_2 = "VERSION_2"
 VERSION_3 = "VERSION_3"
 
+SUPPORTED_V2_AUTH_METHODS = ["apiKey", "oauth2"]
+SUPPORTED_V3_AUTH_METHODS = ["apiKey", "oauth2"]
+
 class Swagger:
     """ Interacting with Swagger """
 
@@ -296,11 +299,21 @@ class Swagger:
 
         if self.version == VERSION_2:
             key = self.security_scheme if self.security_scheme is not None else list(self.definition['securityDefinitions'])[0]
-            return self.definition['securityDefinitions'][key]
+            scheme = self.definition['securityDefinitions'][key]
+            if scheme['type'] not in SUPPORTED_V2_AUTH_METHODS:
+                raise ValueError(scheme['type'] + " is not currently a supported authentication method.")
+
+            return scheme
 
         if self.version == VERSION_3:
+            if "securitySchemes" not in self.definition['components']:
+                raise ValueError("There are no security schemes in your definition.")
+
             key = self.security_scheme if self.security_scheme is not None else list(self.definition['components']['securitySchemes'])[0]
             scheme = self.definition['components']['securitySchemes'][key]
+
+            if scheme['type'] not in SUPPORTED_V3_AUTH_METHODS:
+                raise ValueError(scheme['type'] + " is not currently a supported authentication method.")
             
             if "flows" in scheme:
                 flow_schemes = list(scheme['flows'])
