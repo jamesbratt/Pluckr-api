@@ -243,6 +243,7 @@ class DataSourceResource(ModelResource):
         bundle.data['chart'] = bundle.obj.chart_id
         bundle.data['integration_auth'] = bundle.obj.integration_auth_id
         bundle.data['data_provider_id'] = bundle.obj.data_provider_id
+        bundle.data['data_provider_name'] = bundle.obj.data_provider.name
         return bundle
 
 class DataSetResource(ModelResource):
