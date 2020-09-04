@@ -76,6 +76,8 @@ class ProxyRequest:
             raise ValueError("API keys passed in a cookie is not yet supported")
 
         response = requests.get(url, headers=headers)
+        if response.status_code == 404:
+            raise ValueError(response.reason + ": " + response.text if response.text else "Unknown resource")
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
@@ -84,6 +86,8 @@ class ProxyRequest:
         token = self.get_token()
         headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
         response = requests.get(self.uri, headers=headers)
+        if response.status_code == 404:
+            raise ValueError(response.reason + ": " + response.text if response.text else "Unknown resource")
         if response.status_code != 200:
             raise ValueError(response.json())
         return response.json()
