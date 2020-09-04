@@ -106,19 +106,19 @@ class ProviderResource(ModelResource):
         authentication = ApiKeyAuthentication()
         authorization = UserObjectsOnlyAuthorization()
 
-    def check_is_valid_definition(self, swagger_url):
-        Swagger(swagger_url)
+    def check_is_valid_definition(self, swagger_url, security_scheme):
+        Swagger(swagger_url, security_scheme)
 
     def obj_create(self, bundle, **kwargs):
         try:
-            self.check_is_valid_definition(bundle.data["swagger_url"])
+            self.check_is_valid_definition(bundle.data["swagger_url"], None)
         except ValueError as error:
             raise ImmediateHttpResponse(HttpBadRequest(error))
         return super(ProviderResource, self).obj_create(bundle, **kwargs)
 
     def obj_update(self, bundle, **kwargs):
         try:
-            self.check_is_valid_definition(bundle.data["swagger_url"])
+            self.check_is_valid_definition(bundle.data["swagger_url"], bundle.data["security_scheme"])
         except ValueError as error:
             raise ImmediateHttpResponse(HttpBadRequest(error))
         return super(ProviderResource, self).obj_update(bundle, **kwargs)
