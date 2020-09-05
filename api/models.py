@@ -16,6 +16,8 @@ class Profile(models.Model):
 class Workspace(models.Model):
     title = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.title)
@@ -46,6 +48,8 @@ class Chart(models.Model):
     is_published = models.BooleanField(default=False, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.name)
@@ -55,6 +59,8 @@ class Dashboard(models.Model):
     charts = models.ManyToManyField(Chart, through='DashboardMember', blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.name)
@@ -87,6 +93,8 @@ class DataSource(models.Model):
     swagger_info = JSONField(blank=True, null=True, default=None)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.name)
@@ -102,6 +110,8 @@ class DataSet(models.Model):
     sources = models.ManyToManyField(DataSource, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.name)
@@ -114,6 +124,8 @@ class Operation(models.Model):
     sort_order = models.IntegerField(default=0)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 def add_to_mailing_list(sender, instance, **kwargs):
     if settings.DEBUG is False:
