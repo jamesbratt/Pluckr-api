@@ -13,6 +13,7 @@ from tastypie.exceptions import ImmediateHttpResponse
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
+from django.conf import settings
 
 from api.resources import UserObjectsOnlyAuthorization, UserResource
 
@@ -54,7 +55,7 @@ class ProviderAuthenticate(View):
             response.status_code = status_code
             return response
 
-        return HttpResponseRedirect("http://localhost:3000")
+        return HttpResponseRedirect("http://localhost:3000" if settings.DEBUG else "https://app.pluckr.io")
 
 class ProviderConnect(View):
     """ Redirect to an integrations authorization page """
@@ -62,11 +63,12 @@ class ProviderConnect(View):
     def get(self, request, **kwargs):
         """ Get the redirect url """
         provider = Provider.objects.get(pk=self.kwargs['pk'])
-        stringified_scopes = ' '.join(provider.scopes)
-        scopes = stringified_scopes + ' ' + provider.scope_extensions if provider.scope_extensions != '' else stringified_scopes
+        scope_delimitter = provider.scope_delimitter if provider.scope_delimitter else ' '
+        stringified_scopes = scope_delimitter.join(provider.scopes)
+        scopes = stringified_scopes + ' ' + provider.scope_extensions if provider.scope_extensions else stringified_scopes
         params = [
             ('client_id', provider.client_id),
-            ('redirect_uri', urllib.parse.quote('http://localhost:8000/providers/authenticate/' + str(provider.id) + '/')),
+            ('redirect_uri', urllib.parse.quote(("http://localhost:8000" if settings.DEBUG else "https://api.pluckr.io") + '/providers/authenticate/' + str(provider.id) + '/')),
             ('response_type', 'code'),
             ('scope', urllib.parse.quote(scopes))
         ]
@@ -85,7 +87,7 @@ class ProviderConnect(View):
         endpoint = security_definition['authorizationUrl']
         parameter_extensions = provider.parameter_extensions
 
-        if parameter_extensions != '':
+        if parameter_extensions:
             parameter_extensions_dict = json.loads(parameter_extensions)
             for key in parameter_extensions_dict:
                 params.append((key, parameter_extensions_dict[key]))

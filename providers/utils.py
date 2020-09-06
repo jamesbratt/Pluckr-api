@@ -5,6 +5,7 @@ import datetime
 import requests
 from cryptography.fernet import Fernet
 
+from django.conf import settings
 from api.models import IntegrationAuth
 from .models import Provider
 
@@ -142,7 +143,7 @@ class Connection:
             'client_secret': self.provider.client_secret,
             'code': code,
             'grant_type': 'authorization_code',
-            'redirect_uri': 'http://localhost:8000/providers/authenticate/' + str(self.provider.id) + '/'
+            'redirect_uri': ("http://localhost:8000" if settings.DEBUG else "https://api.pluckr.io") + '/providers/authenticate/' + str(self.provider.id) + '/'
         }
 
         response = requests.post(token_url, data=payload, headers={"Accept":"application/json"})

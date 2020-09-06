@@ -16,6 +16,7 @@ class Provider(models.Model):
     client_id = models.TextField(blank=True, null=True)
     client_secret = models.TextField(blank=True, null=True)
     scopes = JSONField(blank=True, null=True, default=None)
+    scope_delimitter = models.CharField(max_length=10, blank=True, null=True, default=",")
     api_base_url_override = models.TextField(blank=True, null=True, default=None)
     scope_extensions = models.TextField(blank=True, null=True, default=None)
     parameter_extensions = JSONField(blank=True, null=True, default=None)
