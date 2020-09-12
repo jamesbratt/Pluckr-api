@@ -215,4 +215,6 @@ class ProviderResource(ModelResource):
             bundle.data["isConnected"] = True
         else:
             bundle.data["isConnected"] = False
+
+        bundle.data["isOwner"] = bundle.obj.user == bundle.request.user
         return bundle
