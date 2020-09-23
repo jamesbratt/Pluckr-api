@@ -9,6 +9,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     can_be_contacted = models.BooleanField(default=False)
     email_address = models.EmailField(unique=True, default=None, blank=True, null=True)
+    is_paid_member = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
