@@ -1,5 +1,6 @@
 """ Generic utilities for providers """
 
+import time
 from datetime import timezone
 import datetime
 import requests
@@ -60,7 +61,7 @@ class ProxyRequest:
 
         return connection.access_token
 
-    def proxy_api_key_request(self):
+    def proxy_api_key_request(self, retry=True):
         headers = {'Content-Type': 'application/json'}
 
         url = self.uri
@@ -80,16 +81,22 @@ class ProxyRequest:
         if response.status_code == 404:
             raise ValueError(response.reason + ": " + response.text if response.text else "Unknown resource")
         if response.status_code != 200:
+            if retry is True:
+                time.sleep(2)
+                return self.proxy_api_key_request(False)
             raise ValueError(response.json())
         return response.json()
 
-    def proxy_oauth2_request(self):
+    def proxy_oauth2_request(self, retry=True):
         token = self.get_token()
         headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token}
         response = requests.get(self.uri, headers=headers)
         if response.status_code == 404:
             raise ValueError(response.reason + ": " + response.text if response.text else "Unknown resource")
         if response.status_code != 200:
+            if retry is True:
+                time.sleep(2)
+                return self.proxy_oauth2_request(False)
             raise ValueError(response.json())
         return response.json()
 
