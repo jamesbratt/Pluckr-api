@@ -163,6 +163,8 @@ class ProviderResource(ModelResource):
 
     def dehydrate(self, bundle):
         if bundle.obj.user != bundle.request.user:
+            del bundle.data["client_secret"]
+            del bundle.data["api_key"]
             del bundle.data["client_id"]
             del bundle.data["scopes"]
             del bundle.data["api_base_url_override"]
@@ -172,8 +174,6 @@ class ProviderResource(ModelResource):
             
         del bundle.data["user"]
 
-        bundle.data["client_secret"] = "SECRET_KEY" if bundle.data["client_secret"] else None
-        bundle.data["api_key"] = "SECRET_KEY" if bundle.data["api_key"] else None
         try:
             swagger_url = bundle.data["swagger_url"]
             security_scheme = bundle.data["security_scheme"]
