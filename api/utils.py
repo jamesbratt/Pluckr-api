@@ -13,7 +13,7 @@ def clone_chart(chart_id, request, is_published, source_providers):
     datasets_tobe_cloned = chart_to_clone.dataset_set.all()
 
     if source_providers is not None:
-        if source_providers.__len__() != datasets_tobe_cloned.__len__():
+        if source_providers.__len__() != datasources_tobe_cloned.__len__():
             raise ValueError("You must select a data provider for every data source.")
 
     datasource_mapper = {}
