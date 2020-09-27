@@ -15,7 +15,7 @@ def generate_url(endpoint, params):
     url = endpoint
     for i, (param_key, param) in enumerate(params):
         symbol = '&'
-        if i == 0:
+        if i == 0 and '?' not in url:
             symbol = '?'
         url += str(symbol + param_key + '=' + param)
     return url
@@ -352,7 +352,7 @@ class Swagger:
 
             if scheme['type'] not in SUPPORTED_V3_AUTH_METHODS:
                 raise ValueError(scheme['type'] + " is not currently a supported authentication method.")
-            
+
             if "flows" in scheme:
                 flow_schemes = list(scheme['flows'])
                 scheme_key = next((x for x in flow_schemes if x == 'authorizationCode'), None)
