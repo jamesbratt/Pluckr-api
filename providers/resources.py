@@ -143,6 +143,15 @@ class ProviderResource(ModelResource):
         Swagger(swagger_url, security_scheme)
 
     def obj_create(self, bundle, **kwargs):
+        provider_count = Provider.objects.filter(user=bundle.request.user).count()
+        is_member = bundle.request.user.profile.is_paid_member
+
+        if is_member is True and provider_count >= 5:
+            raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
+
+        if is_member is False and provider_count >= 1:
+            raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
+
         try:
             self.check_is_valid_definition(bundle.data["swagger_url"], None)
         except ValueError as error:
