@@ -7,49 +7,18 @@ from tastypie.resources import ModelResource
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie import fields
 from tastypie.http import HttpBadRequest
-from tastypie.validation import Validation
 from tastypie.exceptions import ImmediateHttpResponse
-from tastypie.authorization import Authorization
 
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
-from django.db.models import Q
 
 from api.resources import UserObjectsOnlyAuthorization, UserResource
 
 from .models import Provider
 from .utils import generate_url, Swagger, V2OpenApiSpecConnection, V3OpenApiSpecConnection, VERSION_2, VERSION_3
 
-# TODO: Sub class this
-class UserProvidersOnlyAuthorization(Authorization):
-    def read_list(self, object_list, bundle):
-        return object_list.filter(Q(user=bundle.request.user) | Q(is_public=True))
-
-    def read_detail(self, object_list, bundle):
-        return bundle.obj.user == bundle.request.user or bundle.obj.is_public is True
-
-    def create_list(self, object_list, bundle):
-        return object_list
-
-    def update_list(self, object_list, bundle):
-        allowed = []
-
-        for obj in object_list:
-            if obj.user == bundle.request.user:
-                allowed.append(obj)
-
-        return allowed
-
-    def update_detail(self, object_list, bundle):
-        return bundle.obj.user == bundle.request.user
-
-    def delete_list(self, object_list, bundle):
-        return bundle.obj.user == bundle.request.user
-
-    def delete_detail(self, object_list, bundle):
-        return bundle.obj.user == bundle.request.user
 
 class ProviderAuthenticate(View):
     """ Authenticate with the provider """
@@ -137,7 +106,7 @@ class ProviderResource(ModelResource):
         resource_name = 'provider'
         always_return_data = True
         authentication = ApiKeyAuthentication()
-        authorization = UserProvidersOnlyAuthorization()
+        authorization = UserObjectsOnlyAuthorization()
 
     def check_is_valid_definition(self, swagger_url, security_scheme):
         Swagger(swagger_url, security_scheme)
@@ -149,7 +118,7 @@ class ProviderResource(ModelResource):
         if is_member is True and provider_count >= 5:
             raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
 
-        if is_member is False and provider_count >= 1:
+        if is_member is False and provider_count >= 2:
             raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
 
         try:
@@ -165,13 +134,16 @@ class ProviderResource(ModelResource):
             raise ImmediateHttpResponse(HttpBadRequest(error))
         return super(ProviderResource, self).obj_update(bundle, **kwargs)
 
+    def alter_deserialized_detail_data(self, request, data):
+        data.pop('is_public', None)
+        return super(ProviderResource, self).alter_deserialized_detail_data(request, data)
+
     def hydrate(self, bundle):
-        if bundle.request.method == "POST":
-            bundle.obj.user = bundle.request.user
-        return bundle 
+        bundle.obj.user = bundle.request.user
+        return bundle
 
     def dehydrate(self, bundle):
-        if bundle.obj.user != bundle.request.user:
+        if bundle.obj.is_public is True:
             del bundle.data["client_secret"]
             del bundle.data["api_key"]
             del bundle.data["client_id"]
@@ -180,7 +152,7 @@ class ProviderResource(ModelResource):
             del bundle.data["parameter_extensions"]
             del bundle.data["scope_delimitter"]
             del bundle.data["scope_extensions"]
-            
+
         del bundle.data["user"]
 
         try:
@@ -225,5 +197,4 @@ class ProviderResource(ModelResource):
         else:
             bundle.data["isConnected"] = False
 
-        bundle.data["isOwner"] = bundle.obj.user == bundle.request.user
         return bundle

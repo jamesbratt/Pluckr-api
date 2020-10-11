@@ -4,7 +4,8 @@ Data Provider
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import JSONField
-from api.models import IntegrationAuth, Workspace
+from api.models import IntegrationAuth, Workspace, Profile
+from django.conf import settings
 
 class Provider(models.Model):
     """
@@ -29,3 +30,21 @@ class Provider(models.Model):
     is_public = models.BooleanField(default=False, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+def create_managed_provider(sender, instance, **kwargs):
+    managed_provider = Provider(
+        name = "Stocks API",
+        swagger_url = "https://pluckr.github.io/iex-cloud-swagger.json",
+        is_public = True,
+        security_scheme = "apiKey",
+        api_key = settings.STOCK_MARKET_API_KEY,
+        user = instance.user
+    )
+
+    managed_provider.save()
+
+def signals_import():
+    models.signals.post_save.connect(create_managed_provider, sender=Profile)
+
+signals_import()
