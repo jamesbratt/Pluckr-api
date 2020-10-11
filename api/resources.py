@@ -80,7 +80,7 @@ class IntegrationResource(ModelResource):
         queryset = IntegrationAuth.objects.all()
         resource_name = 'integration_auth'
         authentication = ApiKeyAuthentication()
-        authorization = Authorization()
+        authorization = UserObjectsOnlyAuthorization()
 
 class WorkspaceResource(ModelResource):
     user = fields.ForeignKey(UserResource, 'user')
