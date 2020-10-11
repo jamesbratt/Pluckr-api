@@ -118,7 +118,7 @@ class ProviderResource(ModelResource):
         if is_member is True and provider_count >= 5:
             raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
 
-        if is_member is False and provider_count >= 1:
+        if is_member is False and provider_count >= 2:
             raise ImmediateHttpResponse(HttpBadRequest("Your Data Provider limit has been reached. Please email support@pluckr.io to request to upgrade your account."))
 
         try:
